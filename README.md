@@ -5,4 +5,4 @@ The repository consists of two .cpp source files essential for running an algori
 
 Normalised NGS data files are provided.
 
-To files are to be compiled with C++11
+The files are to be compiled with C++11
