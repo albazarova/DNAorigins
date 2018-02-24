@@ -1,5 +1,5 @@
 # DNAorigins
-Supplementary code for paper on Bayesian inference of DNA origin properties from NGS data.
+Supplementary code for paper on Bayesian inference of DNA origin statistics from NGS data.
 
 The repository consists of two .cpp source files essential for running an algorithm.  
 
