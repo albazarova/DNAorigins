@@ -6,8 +6,11 @@ chr2
 chr7
 chr8
 chr10_{123,234,345,678}
+chr10_2_{123,234,345,456,567,678,789,8910}
 chr10_rat_{234,345,678}
 chr10_wt_{234,345,678}
+
+chr2_human
 
 Created on: 28 Feb 2018
 Author: Alina Bazarova
@@ -5121,7 +5124,14 @@ int main()
 //      int N1=222,N2=475;//ARS207,207.5,207.8
 
       //	chromosome 10 distances
-
+//	int N1=461, N2=886; // ARS1001, ARS1004, ARS1005
+//	int N1=886, N2=632; // ARS1004, ARS1005, ARS1006
+//	int N1=632, N2=273; // ARS1005, ARS1006, ARS1007
+//	int N1=273, N2=973; // ARS1006, ARS1007, ARS1007.5
+//	int N1=973, N2=855; // ARS1007, ARS1007.5, ARS1008
+//	int N1=855, N2=483; // ARS1007.5, ARS1008, ARS1009
+//	int N1=483, N2=1404; // ARS1008, ARS1009, ARS1010
+//	int N1=1404, N2=760; // ARS1009, ARS1010, ARS1011
 //	int N1=767,N2=763; //ARS1010, 1011, 1013
 //	int N1=763,N2=835; //ARS1011, 1013, 1014
 //	int N1=835,N2=510; //ARS1013, 1014, 1015
@@ -5132,6 +5142,11 @@ int main()
 //	int N1=1450,N2=1407;//ARS1018, 1019, 1021
 //	int N1=778,N2=822; //ARS1011, 1013, 1014
 	int N1=822,N2=505; //ARS1013, 1014, 1015
+
+//	chromosome 2 human HeLa 98.25-99.3 Mb
+//	int N1=6459, N2=8500; // left triple of origins
+//	int N1=8500, N2=6201; // right triple of origins
+
 
 	int M=4992;
 
