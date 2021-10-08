@@ -3236,7 +3236,7 @@ else diff23my1=diff23m1;
 
 if (dp23>1) diff23sy=sqrt(diff23s*diff23s+(1.0/(dp23-1.0))*fi2[i5]*fi3[i5]*(y23*y23-t23diff[i5]*t23diff[i5])+((double) dp23/(dp23-1.0))*(diff23m1*diff23m1-diff23my1*diff23my1));
 
-else sqrt(fi2[i5]*fi3[i5]*(y23*y23-t23diff[i5]*t23diff[i5])+dp23*(diff23m1*diff23m1-diff23my1*diff23my1));
+else diff23sy=sqrt(fi2[i5]*fi3[i5]*(y23*y23-t23diff[i5]*t23diff[i5])+dp23*(diff23m1*diff23m1-diff23my1*diff23my1));
 
 
 
