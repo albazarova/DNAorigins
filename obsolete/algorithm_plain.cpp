@@ -17,12 +17,6 @@ Author: Alina Bazarova
 
  */
 
-#include <boost/program_options.hpp>
-#include <boost/program_options/cmdline.hpp>
-#include <boost/any.hpp>
-//#include <vector>
-//#include <string>
-
 
 
 #include <iostream>
@@ -1601,12 +1595,12 @@ for (int iob1=0;iob1<2;++iob1){
 obsc_samp(t123sum,t21diff,t23diff,5,obscpr,obscpr1,obscpr3,fi1,fi2,fi3,L,N1,N2);
 
 
-cout<<obscpr[0]<<" "<<obscpr[1]<<" "<<obscpr[2]<<" "<<obscpr[3]<<" "<<obscpr[4]<<" obscpr 1\n";//prints obscuring probabilities for the case when all origins are active
+cout<<obscpr[0]<<" "<<obscpr[1]<<" "<<obscpr[2]<<" "<<obscpr[3]<<" "<<obscpr[4]<<" obscpr \n";//prints obscuring probabilities for the case when all origins are active
 
 
-double logxj[15000],logxjr[15000]; //for logged data, size corresponds to the length of the data array
+double logxj[1327],logxjr[1327]; //for logged data, size corresponds to the length of the data array
 
-double F1[15000]; //for profile
+double F1[1327]; //for profile
 
 double logvec2=0; //for squared profiles term
 
@@ -1643,7 +1637,6 @@ F1[i6]=0;
 }
 
 
-//cout<<obscpr[0]<<" "<<obscpr[1]<<" "<<obscpr[2]<<" "<<obscpr[3]<<" "<<obscpr[4]<<" obscpr 2\n";//prints obscuring probabilities for the case when all origins are active
 
 
 
@@ -1656,8 +1649,6 @@ F1[i6]=0;
 		logxj[i6]=log(xj[i6]);
 
 		logxjr[i6]=log(xjr[i6]);
-
-//cout<<obscpr[0]<<" "<<obscpr[1]<<" "<<obscpr[2]<<" "<<obscpr[3]<<" "<<obscpr[4]<<" "<<i6<<" obscpr \n";//prints obscuring probabilities for the case when all origins are active
 
 
 		for (i4=0;i4<L;++i4){
@@ -1673,7 +1664,6 @@ F1[i6]=0;
 	}
 
 
-//cout<<obscpr[0]<<" "<<obscpr[1]<<" "<<obscpr[2]<<" "<<obscpr[3]<<" "<<obscpr[4]<<" obscpr 3\n";//prints obscuring probabilities for the case when all origins are active
 
 
 	diff21m=mean(temp2,1,L); //not used
@@ -1698,9 +1688,6 @@ double		diff23m1=meanp(t23diff,L,fi2,fi3);
 double		diff31m1=meanp(t31diff,L,fi3,fi1);
 
 		diff31s=sqrt(varp(t31diff,L,fi3,fi1));
-
-
-//cout<<obscpr[0]<<" "<<obscpr[1]<<" "<<obscpr[2]<<" "<<obscpr[3]<<" "<<obscpr[4]<<" obscpr 4\n";//prints obscuring probabilities for the case when all origins are active
 
 
 //computes the amount of time each of the firing time differences is licensed
@@ -1729,9 +1716,6 @@ int burnin0=100000;
 int ii=0;
 
 int burnina=0;//auxiliary value
-
-//cout<<obscpr[0]<<" "<<obscpr[1]<<" "<<obscpr[2]<<" "<<obscpr[3]<<" "<<obscpr[4]<<" obscpr 5\n";//prints obscuring probabilities for the case when all origins are active
-
 
 for (i1=0;i1<it;++i1){
 
@@ -1820,7 +1804,7 @@ if (i1==burnina+burnin0/(pow(2,ii))){
 if ((i1+1)%25==0){
 
 	printf("rat1 %lf\n",(double) res1a/(double) res1);// acceptance rate for t1+t2+t3 move
-	printf("rat2 %lf\n",(double) res2a/(double) res2);//acceptance rate for time difference move
+	printf("rat2 %lf\n",(double) res2a/(double) res2);//acceptance rate for tie difference move
 	printf("ratb %lf\n",(double) resba/(double) resb);//acceptance rate for b
 	printf("rattau %lf\n",(double) restaua/(double) restau); //acceptance rate for tau
 
@@ -2038,10 +2022,6 @@ if ((i1+1)%10==0) f5<<sqrt(1.0/sig1)<<" "<<sqrt(1.0/sig2)<<" "<<sqrt(1.0/sig3)<<
 cout<<sumfi1<<" sumfi1 "<<sumfi2<<" sumfi2 "<<sumfi3<<" sumfi3\n";
 
 //probability of being obscured given certain amount of origins is licensed
-
-cout<<obscM<<" check\n";
-
-cout<<obscpr[0]<<" check\n";
 
 cout<<obscpr[0]/(double) obscM<<" "<<obscpr[1]/(double) obscM<<" "<<obscpr[2]/(double) obscM<<" "<<obscpr[3]/(double) obscM<<" "<<obscpr[4]/(double) obscM<<"\n";
 
@@ -2323,7 +2303,7 @@ for (int io=0;io<5;++io) obscpry[io]=obscpr[io];
 
 int obscc=obsc_cur(t123sum[i5],t21diff[i5],t23diff[i5],1,1,1,N1,N2);
 
-//cout<<obscc<<" obscc\n";
+
 
 
 if (uo<a010) {
@@ -3582,7 +3562,14 @@ int count1=0;
 for (i23=0;i23<L;++i23) {
 
 
+
 	if ((xst1[i23]>minf1)&&(xst1[i23]<maxf1)) {
+
+
+
+
+
+
 
 		count1+=1;
 
@@ -5118,173 +5105,48 @@ cout<<"clicks "<<time<<" seconds "<<(float) time/CLOCKS_PER_SEC<<"\n";
 }
 
 
-namespace po = boost::program_options;
-
-using Floats  = std::vector<std::pair<std::string, float>>;
-using Ints    = std::vector<std::pair<std::string, int>>;
-using Strings = std::vector<std::pair<std::string, std::string>>;
-
-namespace std {
-    template <typename V> static inline std::istream& operator>>(std::istream& is, std::pair<std::string, V>& into) {
-        char ch;
-        while (is >> ch && ch!='=') into.first += ch;
-        return is >> into.second;
-    }
-}
 
 
-
-int main(int argc, char** argv)
+int main()
 
 {
-
-
-//	namespace po = boost::program_options;
-
-  po::variables_map vm;
-  po::options_description desc("Allowed Options");
-
-  // declare arguments
-  desc.add_options()
-  	("help,h", "Help screen")
-    ("chr,c", po::value<int>()->required(), "Enter the chromosome number")
-    ("rat,r", po::value<int>()->default_value(0), "Rat or not, rat==2 means human data")
-    ("wt,w", po::value<int>()->default_value(0), "If Rat, WT or not")
-    ("left,l", po::value<int>()->required(), "Number of left origin (in case of human data 1 or 2)");
-
-  // parse arguments and save them in the variable map (vm)
-  po::store(po::parse_command_line(argc, argv, desc), vm);
-      if (vm.count("help")){
-      std::cout << desc << '\n';
-  } else{
-
-  //std::cout << "Hello " << vm["chr"].as<int>() << std::endl;
-
-  int chr=vm["chr"].as<int>();
-  int rat=vm["rat"].as<int>();
-  int l=vm["left"].as<int>();
-  int w=vm["wt"].as<int>();
-
-//int rat=1;
-//int l=1013;
-
- // std::cout<<chr<<" lalalala"<<endl;
-  //bool rat=vm["rat"].as<std::bool>()
-  //int left=vm["left"].as<std::int>()
-
-
 	int i,j;
-	double xj[15000],xjr[15000];//data from the forward xj[] and reverse xjr[] strand of a corresponding size
+	double xj[1327],xjr[1327];//data from the forward xj[] and reverse xjr[] strand of a corresponding size
 
 	//distances between origins
 
-int N1,N2;
+//	int N1=1032,N2=1249; //ARS813, 815, 816
+//	int N1=1249,N2=649; //ARS815, 816, 818
 
-if (rat==0){
-if (chr==8){
-	if (l==813){
-	 N1=1032,N2=1249; //ARS813, 815, 816
-} else{
-	 N1=1249,N2=649; //ARS815, 816, 818
-}
-} else if (chr==7){
-	if (l==718){
+//	int N1=1285,N2=461; //ARS718, 719, 720
+//	int N1=660,N2=1285; //ARS717, 718, 719
 
-	 N1=1285,N2=461; //ARS718, 719, 720
-} else{
-	 N1=660,N2=1285; //ARS717, 718, 719
-}
-} else if (chr==2){
-      
-      //int 
-      N1=222,N2=475;//ARS207,207.5,207.8
+//      int N1=222,N2=475;//ARS207,207.5,207.8
 
-} else if (chr==10){
       //	chromosome 10 distances
-	if (l==1001){
-	//int 
-	N1=461, N2=886; // ARS1001, ARS1004, ARS1005
-} else if (l==1004){
+//	int N1=461, N2=886; // ARS1001, ARS1004, ARS1005
+//	int N1=886, N2=632; // ARS1004, ARS1005, ARS1006
+//	int N1=632, N2=273; // ARS1005, ARS1006, ARS1007
+//	int N1=273, N2=973; // ARS1006, ARS1007, ARS1007.5
+//	int N1=973, N2=855; // ARS1007, ARS1007.5, ARS1008
+//	int N1=855, N2=483; // ARS1007.5, ARS1008, ARS1009
+//	int N1=483, N2=1404; // ARS1008, ARS1009, ARS1010
+//	int N1=1404, N2=760; // ARS1009, ARS1010, ARS1011
+//	int N1=767,N2=763; //ARS1010, 1011, 1013
+//	int N1=763,N2=835; //ARS1011, 1013, 1014
+//	int N1=835,N2=510; //ARS1013, 1014, 1015
+//	int N1=1446,N2=1420;//ARS1018, 1019, 1021
 
-	//int 
-	N1=886, N2=632; // ARS1004, ARS1005, ARS1006
-
-} else if (l==1005){
-
-	//int 
-	N1=632, N2=273; // ARS1005, ARS1006, ARS1007
-
-} else if (l==1006){
-
-	//int 
-	N1=273, N2=973; // ARS1006, ARS1007, ARS1007.5
-
-} else if (l==1007){
-	//int 
-	N1=973, N2=855; // ARS1007, ARS1007.5, ARS1008
-
-} else if (l==10075){
-	
-	//int 
-	N1=855, N2=483; // ARS1007.5, ARS1008, ARS1009
-
-} else if (l==1008){
-
-	//int 
-	N1=483, N2=1404; // ARS1008, ARS1009, ARS1010
-
-} else if (l==1009){
-
-	//int 
-	N1=1404, N2=760; // ARS1009, ARS1010, ARS1011
-
-} else if (l==1010){
-	
-	//int 
-	N1=767,N2=763; //ARS1010, 1011, 1013
-
-} else if (l==1011){
-
-	//int 
-	N1=763,N2=835; //ARS1011, 1013, 1014
-
-} else if (l==1013){
-	
-	//int 
-	N1=835,N2=510; //ARS1013, 1014, 1015
-
-} else {
-	//int 
-	N1=1446,N2=1420;//ARS1018, 1019, 1021
-}
-}
-} else if (rat==1){
 //	chromosome 10 data for rat1 example
-	if (l==1018){
 
-	//int 
-	N1=1450,N2=1407;//ARS1018, 1019, 1021
+//	int N1=1450,N2=1407;//ARS1018, 1019, 1021
+//	int N1=778,N2=822; //ARS1011, 1013, 1014
+	int N1=822,N2=505; //ARS1013, 1014, 1015
 
-} else if (l==1011){
-
-	//int 
-	N1=778,N2=822; //ARS1011, 1013, 1014
-
-} else{
-	//int 
-	N1=822,N2=505; //ARS1013, 1014, 1015
-}
-} else {
-
-	if (l==1){
 //	chromosome 2 human HeLa 98.25-99.3 Mb
-	//int 
-	N1=6459, N2=8500; // left triple of origins
-} else{
-	//int 
-	N1=8500, N2=6201; // right triple of origins
-}
-}
+//	int N1=6459, N2=8500; // left triple of origins
+//	int N1=8500, N2=6201; // right triple of origins
+
 
 	int M=4992;
 
@@ -5293,38 +5155,9 @@ if (chr==8){
 	ifstream fi;//file for data from the forward strand
 	ifstream fir;//file for data from the reverse strand
 
-	ostringstream convert;
+	fi.open("chr10_rat1_345_f.txt");
+	fir.open("chr10_rat1_345_r.txt");
 
-	convert<<chr;
-
-	//		cout<<convert<<"\n";
-
-	string chrn=convert.str();
-
-	convert.str("");
-	convert.clear();
-	convert<<l;
-
-	string le=convert.str();
-
-	if (rat!=1){
-	fi.open("chr"+chrn+"_"+le+"_f.txt");
-	fir.open("chr"+chrn+"_"+le+"_r.txt");
-} else {
-	if (w==0){
-
-		fi.open("chr"+chrn+"_rat1_"+le+"_f.txt");
-	fir.open("chr"+chrn+"_rat1_"+le+"_r.txt");
-} else {
-		fi.open("chr"+chrn+"_wt_"+le+"_f.txt");
-	fir.open("chr"+chrn+"_wt_"+le+"_r.txt");
-
-}
-}
-
-//cout<<"chr"+chrn+"_"+le+"_f.txt"<<endl;
-
-//exit(1);
 
 	cout<<xj[0]<<"\n";
 
@@ -5359,6 +5192,6 @@ if (chr==8){
 
 	MCMC(xj,xjr,M,N1,N2,1000000);//running the algorithm
 
-}
+
 	return 0;
 }

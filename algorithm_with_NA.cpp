@@ -12,7 +12,9 @@ Author: Alina Bazarova
 */
 
 
-
+#include <boost/program_options.hpp>
+#include <boost/program_options/cmdline.hpp>
+#include <boost/any.hpp>
 
 #include <iostream>
 #include <random> //for random number generator
@@ -1583,9 +1585,9 @@ obsc_samp(t123sum,t21diff,t23diff,5,obscpr,obscpr1,obscpr3,fi1,fi2,fi3,L,N1,N2);
 
 cout<<obscpr[0]<<" "<<obscpr[1]<<" "<<obscpr[2]<<" "<<obscpr[3]<<" "<<obscpr[4]<<" obscpr \n";//prints obscuring probabilities for the case when all origins are active
 
-double logxj[3406],logxjr[3406]; //for logged data, size corresponds to the length of the data array
+double logxj[4000],logxjr[4000]; //for logged data, size corresponds to the length of the data array
 
-double F1[3406]; //for profile
+double F1[4000]; //for profile
 
 double logvec2=0; //for squared profiles term
 
@@ -3257,7 +3259,7 @@ else diff23my1=diff23m1;
 
 if (dp23>1) diff23sy=sqrt(diff23s*diff23s+(1.0/(dp23-1.0))*fi2[i5]*fi3[i5]*(y23*y23-t23diff[i5]*t23diff[i5])+((double) dp23/(dp23-1.0))*(diff23m1*diff23m1-diff23my1*diff23my1));
 
-else sqrt(fi2[i5]*fi3[i5]*(y23*y23-t23diff[i5]*t23diff[i5])+dp23*(diff23m1*diff23m1-diff23my1*diff23my1));
+else diff23sy=sqrt(fi2[i5]*fi3[i5]*(y23*y23-t23diff[i5]*t23diff[i5])+dp23*(diff23m1*diff23m1-diff23my1*diff23my1));
 
 //mean value t3-t1
 
@@ -5182,23 +5184,85 @@ cout<<"clicks "<<time<<" seconds "<<(float) time/CLOCKS_PER_SEC<<"\n";
 }
 
 
-int main()
+namespace po = boost::program_options;
+
+using Floats  = std::vector<std::pair<std::string, float>>;
+using Ints    = std::vector<std::pair<std::string, int>>;
+using Strings = std::vector<std::pair<std::string, std::string>>;
+
+namespace std {
+    template <typename V> static inline std::istream& operator>>(std::istream& is, std::pair<std::string, V>& into) {
+        char ch;
+        while (is >> ch && ch!='=') into.first += ch;
+        return is >> into.second;
+    }
+}
+
+
+
+int main(int argc, char** argv)
 
 {
 	int i,j;
-	double xj[3406], xjr[3406]; //data from the forward xj[] and reverse xjr[] strand of a corresponding size
+	double xj[4000], xjr[4000]; //data from the forward xj[] and reverse xjr[] strand of a corresponding size
 
+  po::variables_map vm;
+  po::options_description desc("Allowed Options");
+
+  desc.add_options()
+  	("help,h", "Help screen")
+ //   ("chr,c", po::value<int>()->required(), "Enter the chromosome number")
+    ("rat,r", po::value<int>()->default_value(0), "Rat or not")
+    ("wt,w", po::value<int>()->default_value(0), "If Rat, WT or not")
+    ("left,l", po::value<int>()->required(), "Number of left origin");
+
+  // parse arguments and save them in the variable map (vm)
+  po::store(po::parse_command_line(argc, argv, desc), vm);
+      if (vm.count("help")){
+      std::cout << desc << '\n';
+  } else {
+
+  //std::cout << "Hello " << vm["chr"].as<int>() << std::endl;
+
+  int w=vm["wt"].as<int>();
+  int rat=vm["rat"].as<int>();
+  int l=vm["left"].as<int>();
+
+int N1,N2;
+int minNA,maxNA;
+	
 	//distances between origins
 
+if (rat==0){
 
-//	int N1=510,N2=1957; //ARS1014,1015,1018
-//	int N1=1957,N2=1446; //ARS1015, 1018, 1019
+		if (l==1014){
+//	int 
+		N1=510,N2=1957; //ARS1014,1015,1018
+		minNA=1098,maxNA=1336; //ARS1014,1015,1018
 
+	} else {
+//	int 
+		N1=1957,N2=1446; //ARS1015, 1018, 1019
+		minNA=1098-510,maxNA=1336-510; //ARS1015,1018,1019
+	}
+
+} else {
+	if (l==1014){
 	//	chromosome 10 data for rat1 example
 
-//	int N1=503,N2=1960; //ARS1014,1015,1018
-	int N1=1960,N2=1446; //ARS1015, 1018, 1019
 
+//	int 
+N1=503,N2=1960; //ARS1014,1015,1018
+
+minNA=1108,maxNA=1336; //ARS1014,1015,1018 rat1 data
+
+} else{
+//	int 
+N1=1960,N2=1446; //ARS1015, 1018, 1019
+
+minNA=1108-503,maxNA=1336-503;
+}
+}
 	int M=4992; //parameter M, number of profile realisations
 
 	//	int it=1000000; //amount of iteration in case of using simulations
@@ -5209,14 +5273,33 @@ int main()
 //int minNA=1098-510,maxNA=1336-510; //ARS1015,1018,1019
 
 //	int minNA=1108,maxNA=1336; //ARS1014,1015,1018 rat1 data
-	int minNA=1108-503,maxNA=1336-503; //ARS1015,1018,1019 rat1 data
+//	int minNA=1108-503,maxNA=1336-503; //ARS1015,1018,1019 rat1 data
 
 	ifstream fi;//file for data from the forward strand
 	ifstream fir;//file for data from the reverse strand
 
+	ostringstream convert;
 
-	fi.open("chr10_wt_567_f.txt");
-	fir.open("chr10_wt_567_r.txt");
+
+
+	convert<<l;
+
+	string le=convert.str();
+
+	if (rat!=1){
+	fi.open("chr10_"+le+"_f.txt");
+	fir.open("chr10_"+le+"_r.txt");
+} else {
+	if (w==0){
+
+		fi.open("chr10_rat1_"+le+"_f.txt");
+	fir.open("chr10_rat1_"+le+"_r.txt");
+} else {
+		fi.open("chr10_wt_"+le+"_f.txt");
+	fir.open("chr10_wt_"+le+"_r.txt");
+
+}
+}
 
 
 	for (i=0;i<N1+N2;++i){
@@ -5249,7 +5332,7 @@ int main()
 
 
 
-
+}
 
 
 	return 0;

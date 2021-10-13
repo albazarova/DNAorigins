@@ -1,27 +1,16 @@
 /*
-Implementation of the bayesian algorithm for inference DNA replication origin statistics from NGS data without missing values
-
+Implementation of the bayesian algorithm for inference DNA replication origin statistics from NGS data with an array of missing values
+ 
 datasets
-chr2
-chr7
-chr8
-chr10_{123,234,345,678} ARS1010-ARS1021
-chr10_2_{123,234,345,456,567,678,789,8910} ARS1001, ARS1004-ARS1010
-chr10_rat_{234,345,678}
-chr10_wt_{234,345,678}
-
-chr2_human
+chr10_{456,567}
+chr10_wt_{456,567}
+chr10_rat1_{456,567}
 
 Created on: 28 Feb 2018
 Author: Alina Bazarova
 
- */
+*/
 
-#include <boost/program_options.hpp>
-#include <boost/program_options/cmdline.hpp>
-#include <boost/any.hpp>
-//#include <vector>
-//#include <string>
 
 
 
@@ -60,7 +49,7 @@ int compare_doubles (const void *X, const void *Y) //for qsort for doubles
        }
 }
 
-int compare_ints (const void *X, const void *Y) //for qsort for ints
+int compare_ints (const void *X, const void *Y)//for qsort for ints
 {
        int x = *((int *)X);
        int y = *((int *)Y);
@@ -84,7 +73,7 @@ int compare_ints (const void *X, const void *Y) //for qsort for ints
 
 
 
-int ind (double a){ //indicator function strict
+int ind (double a){//indicator function strict
 
 	if (a>0) return 1;
 	else return 0;
@@ -100,8 +89,7 @@ int indw (double a){//indicator function non-strict
 
 
 
-double sum(double a[],int k,int n){ //sum of the elements of the array of doubles
-
+double sum(double a[],int k,int n){//sum of the elements of the array of doubles
 
 	int i;
 	double suma=0.0;
@@ -114,7 +102,7 @@ double sum(double a[],int k,int n){ //sum of the elements of the array of double
 	return suma;
 }
 
-double sumint(int a[],int k,int n){ //sum of the elements of the array of ints
+double sumint(int a[],int k,int n){//sum of the elements of the array of ints
 
 	int i;
 	int suma=0;
@@ -124,14 +112,14 @@ double sumint(int a[],int k,int n){ //sum of the elements of the array of ints
 	return suma;
 }
 
-double mean(double a[],int k, int n){ //mean value of the elements of the array of doubles
+double mean(double a[],int k, int n){//mean value of the elements of the array of doubles
 	return sum(a,k,n)/(n-k+1);
 }
 
 
 
 
-double dotprod(double a[],double b[],int k,int n){ //scalar product of two vectors written in arrays of doubles
+double dotprod(double a[],double b[],int k,int n){//scalar product of two vectors written in arrays of doubles
 
 	int i;
 
@@ -142,12 +130,13 @@ for	(i=k-1;i<n;++i) dotpr+=(a[i]*b[i]);
 return dotpr;
 }
 
-double dotprodp(double a[],int b[],int n){ //scalar product of two vectors one written in array of doubles, another written in array of ints
+double dotprodp(double a[],int b[],int n){//scalar product of two vectors one written in array of doubles, another written in array of ints
 int i;
 double dotpr;
 dotpr=0;
 for (i=0;i<n;++i){
 dotpr=dotpr+a[i]*b[i];
+
 }
 return dotpr;
 }
@@ -171,6 +160,8 @@ k=dotprodp(a,f,n);
 
 int dotprodpp(int f1[],int f2[],int f3[],int n,int j,int k){
 //scalar product which takes into account only active origins; f1[],f2[],f3[] indicate whether origins are active or not
+
+
 int i;
 double dotpr;
 dotpr=0;
@@ -203,7 +194,8 @@ else{
 return dotpr;
 }
 
-double var(double a[],int k,int n){//variance of an array of doubles
+double var(double a[],int k,int n){
+	//variance of an array of doubles
 
 return (dotprod(a,a,k,n)-(n-k+1)*mean(a,k,n)*mean(a,k,n))/(n-k);
 }
@@ -211,6 +203,7 @@ return (dotprod(a,a,k,n)-(n-k+1)*mean(a,k,n)*mean(a,k,n))/(n-k);
 
 double varp(double a[], int n, int fl[], int fr[]){
 	//for computing variance over active only origins; fl[] and fr[] indicate whether left or right origin is active
+
 
 double v;
 double vec[8000];
@@ -220,6 +213,7 @@ int i,p,f[8000];
 for (int j=0;j<n;++j) f[j]=fl[j]*fr[j];
 
 p=sumint(f,1,n);
+
 
 
 for (i=0;i<n;++i){
@@ -238,13 +232,13 @@ else {
 }
 
 
-double cov(double a[], double b[],int k,int n){ //covariance of two arrays of double
-
+double cov(double a[], double b[],int k,int n){
+	//covariance of two arrays of double
 
 return dotprod(a,b,k,n)-(n-k+1)*mean(a,k,n)*mean(b,k,n);
 }
 
-double xst(double t21diff, int N){//collision point if both origin fires, double
+double xst(double t21diff, int N){ //collision point if both origin fires, double
 
 	return (double) (N+t21diff)/2.0;
 }
@@ -252,7 +246,7 @@ double xst(double t21diff, int N){//collision point if both origin fires, double
 
 
 int fire(double t123sum, double t21diff, double t23diff, int diff1,int diff2,int i){
-//determines whether the origin i is obscured (0) or not (1) given the current time parameters and differences between first two (diff1) and last two (diff2) origins
+	//determines whether the origin i is obscured (0) or not (1) given the current time parameters and differences between first two (diff1) and last two (diff2) origins
 
 	int r;
 
@@ -298,7 +292,8 @@ int fire(double t123sum, double t21diff, double t23diff, int diff1,int diff2,int
 
 void xstar(double t123sum,double t21diff, double t23diff,int N1, int N2, int &b1, int &b2, int fi1, int fi2, int fi3){
 
-	//collision points for a given profile with time parameters determined by the parameters 1-3, distances 4-5, licensing indicators 8-10
+//collision points for a given profile with time parameters determined by the parameters 1-3, distances 4-5, licensing indicators 8-10
+
 
 	double a1,a2;
 
@@ -307,7 +302,7 @@ if (fi1*fi2*fi3==1){
 
 a1=xst(t21diff,N1);
 a2=xst(-t23diff,N2);
-
+//a3=xst(t3,t1,N);
 
 if (fire(t123sum,t21diff,t23diff,N1,N2,1)==0){
 
@@ -438,7 +433,6 @@ b1=floor(a1);
 b2=floor(a2);
 
 }
-
 
 
 
@@ -601,6 +595,7 @@ void multrnd1 (double q0, double q1, double q2,int &fi0, int &fi1,int &fi2,int &
 
 	//multinomial random variable;not used at the moment
 
+
 	std::random_device gen;
 
 	std::uniform_real_distribution <double>unifrnd(0.0,1.0);
@@ -702,7 +697,6 @@ void dirrnd(int sumfi0, int sumfi1,int sumfi2,double &q0,double &q1, double &q2,
 
 	double y3=gammarnd3(gen);
 
-
 q0=y0/(y0+y1+y2+y3);
 
 q1=y1/(y0+y1+y2+y3);
@@ -711,7 +705,11 @@ q2=y2/(y0+y1+y2+y3);
 
 }
 
-void multrnd (int M, double q0, double q1,double q2,int fi0[], int fi1[],int fi2[],int fi3[]){//another function which is not used
+
+
+void multrnd (int M, double q0, double q1,double q2,int fi0[], int fi1[],int fi2[],int fi3[]){
+
+	//another function which is not used
 
 	std::random_device gen;
 
@@ -765,10 +763,12 @@ void multrnd (int M, double q0, double q1,double q2,int fi0[], int fi1[],int fi2
 
 }
 
-void sim(double t1m, double t2m, double t3m, double t1s, double t2s, double t3s, int it, int N1,int N2,double xj[],double b,double tau, double q1, double q2, double q3){//simulates data on the forward strand
-//parameters 1-3 are mean, 4-6 sd firing times, it - amount of iterations to average out
-//N1,N2 distances between origins
-//b,tau,qi - parameters of the model
+void sim(double t1m, double t2m, double t3m, double t1s, double t2s, double t3s, int it, int N1,int N2,double xj[],double b,double tau, double q1, double q2, double q3){
+
+	//parameters 1-3 are mean, 4-6 sd firing times, it - amount of iterations to average out
+	//N1,N2 distances between origins
+	//b,tau,qi - parameters of the model
+
 int i,j,k;
 
 //the following lines for especially large values of it
@@ -786,7 +786,6 @@ int xst1[100000],xst2[100000];
 int fi1,fi2,fi3;
 std::random_device gen;
 std::uniform_real_distribution <double>unifrnd(0.0,1.0);
-
 
 
 
@@ -840,7 +839,7 @@ for	(i=0;i<it;++i){
 	}
 
 
-
+	cout<<i<<" hi!\n";
 	f54<<fi1<<"\n";
 
 	f55<<fi2<<"\n";
@@ -851,18 +850,11 @@ for	(i=0;i<it;++i){
 
 	f51<<t1[i]<<"\n";
 
-
-
 	f52<<t2[i]<<"\n";
-
-
 
 	f53<<t3[i]<<"\n";
 
-
 }
-
-cout<<"fghf\n";
 
 //if using large it
 
@@ -878,27 +870,24 @@ f54.close();
 f55.close();
 f56.close();
 
-cout<<"hi!\n";
+
 
 int ind;
 double a;
 	for (k=0;k<N1+N2;++k){
 		std::normal_distribution<double> normrnd(0,tau);
-	printf("%d\n",k);//prints the position number for which the value is being computed
+	printf("%d\n",k); //prints the position number for which the value is being computed
 
 for (j=0;j<it;++j){
 		if (((k>=xst1[j])&&(k<N1))||(k>=xst2[j]+N1)) {
 
 			ind=1;
-
 		}
 		else ind=0;
 
-
-
 	xj[k]=xj[k]+(((1-b)*ind+b)/it);
 
-
+	if (xj[k]<-1000000) exit(1);
 	}
 
 	a=normrnd(gen);
@@ -960,6 +949,7 @@ for	(i=0;i<it;++i){
 }
 
 
+
 //free(t1);
 //free(t2);
 //free(t3);
@@ -979,6 +969,7 @@ double a;
 	for (k=0;k<N1+N2;++k){
 		std::normal_distribution<double> normrnd(0,tau);
 
+
 for (j=0;j<it;++j){
 		if (((k>=xst1[j])&&(k<N1))||(k>=xst2[j]+N1)) {
 
@@ -996,6 +987,7 @@ for (j=0;j<it;++j){
 
 
 
+
 xjr[k]=1-xj[k]+2*b;
 
 	a=normrnd(gen);
@@ -1010,14 +1002,10 @@ xjr[k]=1-xj[k]+2*b;
 
 
 void obsc_samp(double t123sum[], double t21diff[],double t23diff[],int n, int obscpr[], int obscpr1[], int obscpr3[],int fi1[],int fi2[],int fi3[],int M,int N1,int N2){
-//computes obscuring number for each origin
+	//computes obscuring number for each origin
 
 
-
-	for (int i=0;i<n;++i){
-
-		obscpr[i]=0;
-	}
+	for (int i=0;i<n;++i) obscpr[i]=0;
 
 	for (int j=0;j<M;++j) {
 
@@ -1048,25 +1036,29 @@ else{
 		else{
 			if ((fi1[j]==0)&&(fi3[j]==1)){
 
+				if ((fire(t123sum[j],t21diff[j],t23diff[j],N1,N2,3)==0)&&(t21diff[j]<N1)) obscpr1[1]+=1;
 
+				else{
 
 					if (t23diff[j]<-N2) obscpr1[1]+=1;
 
 					else obscpr1[0]+=1;
 
-
+			}
 			}
 			else{
 
 
 				if ((fi1[j]==1)&&(fi3[j]==0)){
 
+					if ((fire(t123sum[j],t21diff[j],t23diff[j],N1,N2,1)==0)&&(t23diff[j]<N2-2)) obscpr3[1]+=1;
 
+					else{
 
 						if (t21diff[j]<-N1+2) obscpr3[1]+=1;
 
 						else obscpr3[0]+=1;
-
+			}
 			}
 		}
 
@@ -1077,15 +1069,15 @@ else{
 
 
 
+int obsc_cur(double t123,double t21, double t23, int f1, int f2, int f3, int N1, int N2){
 
-int obsc_cur(double t123,double t21, double t23, int f1, int f2, int f3, int N1, int N2){//whether
-//determines whether obscuring takes place for a given profile;
+	//determines whether obscuring takes place for a given profile;
 
-//	0 - no, i- ith origin obscured, 4 - both end origins are obscured; if all origins are licensed
+	//	0 - no, i- ith origin obscured, 4 - both end origins are obscured; if all origins are licensed
 
-// 0 no obscuring; 1 obscuring in case on of the end origins is not licensed
+	// 0 no obscuring; 1 obscuring in case on of the end origins is not licensed
 
-//	obscuring status of the current profile
+	//	obscuring status of the current profile
 
 	int res;
 
@@ -1117,13 +1109,15 @@ int obsc_cur(double t123,double t21, double t23, int f1, int f2, int f3, int N1,
 
 		if (f3==0){
 
+if ((fire(t123,t21,t23,N1,N2,1)==0)&&(t23<N2-2)) res=1;
 
+else{
 
 	if (t21<-N1+2) res=1;
 
 	else res=0;
 
-
+}
 
 
 
@@ -1132,11 +1126,14 @@ int obsc_cur(double t123,double t21, double t23, int f1, int f2, int f3, int N1,
 
 			if (f1==0){
 
+				if ((fire(t123,t21,t23,N1,N2,3)==0)&&(t21<N1)) res=1;
 
+				else{
 
 					if (t23<-N2) res=1;
 
 					else res=0;
+			}
 		}
 
 	}
@@ -1148,9 +1145,11 @@ int obsc_cur(double t123,double t21, double t23, int f1, int f2, int f3, int N1,
 	return res;
 }
 
+
 void obsc_count(int fi1[], int fi2[], int fi3[],int &obscM, int &obsc1M, int &obsc3M, int M){
 
 //computes how many times all 3 origins are active, how many times only left (1)/right one (3) is inactive
+
 
 	obscM=0;
 	obsc1M=0;
@@ -1177,8 +1176,9 @@ void obsc_count(int fi1[], int fi2[], int fi3[],int &obscM, int &obsc1M, int &ob
 }
 
 
-void MCMC(double xj[],double xjr[],int M, int N1,int N2,int it){
-//MCMC function
+
+void MCMC(double xj[],double xjr[],int M, int N1,int N2,int it,int minNA,int maxNA){
+	//MCMC function
 
 	  clock_t time;
 
@@ -1189,7 +1189,6 @@ double t123sum[4992],t21diff[4992],t23diff[4992],t31diff[4992];// firing time pa
 int fi1[4992],fi2[4992],fi3[4992];//licensing indicators
 
 ofstream f1;
-
 ofstream f2;
 ofstream f3;
 ofstream f4;
@@ -1199,7 +1198,6 @@ ofstream f7,f8;
 
 ifstream f21,f123,f23;
 ifstream ff1,ff2,ff3;
-
 
 
 f1.open("fileb.txt");//output for parameter b
@@ -1212,13 +1210,12 @@ f8.open("fileq.txt");//output for lisencing probability parameters (q1, q2, q3)
 
 
 
-
 std::random_device gen;
 
 std::uniform_real_distribution <double>unifrnd(0.0,1.0); //uniform[0,1]
 
 
-double diff21m,diff23m,sum123m,diff21s,sum123s, diff23s, diff31m=0,diff31s,s21=1.0,s23=1.0,s31=1.0,s=1.0;
+double diff21m,diff23m, sum123m,diff21s,sum123s, diff23s, diff31m=0,diff31s,s21=1.0,s23=1.0,s31=1.0,s=1.0;
 
 //distributions for priors
 
@@ -1240,11 +1237,12 @@ while ((b<=0)&&(b>=1)) b=normrndpb(gen);
 
 //double tau=0.000001,b=0.000005; //if the parameters are fixed
 
+//double q1=1.0,q2=1.0,q3=1.0; //if the parameters are fixed
 double q1y,q2y,q3y;
 
 double q1=unifrnd(gen),q2=unifrnd(gen),q3=unifrnd(gen);
 
-//double sig1=pow(10000,-2),sig2=pow(10000,-2),sig3=pow(10000,-2));//if the parameters are fixed
+//double sig1=pow(10000,-2),sig2=pow(10000,-2),sig3=pow(10000,-2),sig21=pow(200*sqrt(2),-2),sig32=pow(2000*sqrt(2),-2); //if the parameters are fixed
 
 double sig1=gammarndpsig(gen),sig2=gammarndpsig(gen),sig3=gammarndpsig(gen);
 
@@ -1268,9 +1266,7 @@ int xst1[4992],xst2[4992]; //collision points, M=4992
 for (i=0;i<M;++i){
 
 	std::uniform_real_distribution <double>unifrnd0(-3*N2,3*N2); //uniform[-3N2,3N2]
-	std::uniform_real_distribution <double>unifrnd01(-N1-N2,N1+N2);//uniform[-N1-N2,N1+N2]
-
-
+	std::uniform_real_distribution <double>unifrnd01(-N1-N2,N1+N2); //uniform[-N1-N2,N1+N2]
 
 	t123sum[i]=0;
 	t23diff[i]=unifrnd0(gen);
@@ -1285,7 +1281,7 @@ for (i=0;i<M;++i){
 	}
 
 
-//different normalising factors depending on the identifiability constraint in the current region
+	//different normalising factors depending on the identifiability constraint in the current region
 
 	double normq10=q1*q2*q3+(1-q1)*q2*q3+q1*q2*(1-q3)+(1-q1)*q2*(1-q3);
 
@@ -1301,8 +1297,7 @@ for (i=0;i<M;++i){
 
 	//lisencing indicators
 
-
-	if ((fabs(t31diff[i])>N1+N2)){ // |t3-t1|>N1+N2
+	if ((fabs(t31diff[i])>N1+N2)){// |t3-t1|>N1+N2
 
 		if (uf0<q1*q2*q3/normq10){
 
@@ -1521,12 +1516,11 @@ for (i=0;i<M;++i){
 
 	}
 
-//collision points for ith profile
+	//collision points for ith profile
 
 	xstar(t123sum[i],t21diff[i],t23diff[i],N1,N2,xst1[i],xst2[i],fi1[i],fi2[i],fi3[i]);
 
-
-//check they are feasible
+	//check they are feasible
 
 	if (((xst1[i]<0)||(xst2[i]<0))||((xst1[i]>N1)||(xst2[i]>N2))){
 
@@ -1537,9 +1531,6 @@ for (i=0;i<M;++i){
 		exit(1);
 	}
 
-
-
-	f7<<fi1[i]<<" "<<fi2[i]<<" "<<fi3[i]<<"\n";
 }
 
 
@@ -1551,23 +1542,23 @@ double temp2[4992],temp3[4992],temp4[4992]; //not used
 
 //amount of active origins out of L
 
-int sumfi3=sumint(fi3,1,L);
+int sumfi3=sumint(fi3,1,M/16);
 
-int sumfi1=sumint(fi1,1,L);
+int sumfi1=sumint(fi1,1,M/16);
 
-int sumfi2=sumint(fi2,1,L);
+int sumfi2=sumint(fi2,1,M/16);
 
 //not used
 
-obsc(t123sum,t21diff,t23diff,t31diff,N1,N2,L,2,temp2);
+obsc(t123sum,t21diff,t23diff,t31diff,N1,N2,M/16,2,temp2);
 
-obsc(t123sum,t21diff,t23diff,t31diff,N1,N2,L,3,temp3);
+obsc(t123sum,t21diff,t23diff,t31diff,N1,N2,M/16,3,temp3);
 
-obsc(t123sum,t21diff,t23diff,t31diff,N1,N2,L,4,temp4);
+obsc(t123sum,t21diff,t23diff,t31diff,N1,N2,M/16,4,temp4);
 
 //mean and sd of the t1+t2+t3 move
 
-sum123m=mean(t123sum,1,L);
+sum123m=mean(t123sum,1,M/16);
 
 sum123s=0;
 
@@ -1575,40 +1566,29 @@ sum123s=0;
 
 double sum1230=4000;
 
-
 //computes how many times one of the three types of profiles taking place (please see obsc_count() function)
 
-int obscM=0,obsc1M=0,obsc3M=0;
+int obscM,obsc1M,obsc3M;// how many times all three origins are active
 
 obsc_count(fi1,fi2,fi3,obscM,obsc1M,obsc3M,L);
-
-cout<<obscM<<" obscM\n";// how many times all three origins are active
 
 //obscuring probabilities of the three types of profiles taking place (please see obsc_samp() function)
 
 int obscpr[5],obscpr1[2],obscpr3[2];
 
 
-for (int iob1=0;iob1<2;++iob1){
-
-	obscpr1[iob1]=0;
-
-	obscpr3[iob1]=0;
-
-}
-
 
 obsc_samp(t123sum,t21diff,t23diff,5,obscpr,obscpr1,obscpr3,fi1,fi2,fi3,L,N1,N2);
 
 
-cout<<obscpr[0]<<" "<<obscpr[1]<<" "<<obscpr[2]<<" "<<obscpr[3]<<" "<<obscpr[4]<<" obscpr 1\n";//prints obscuring probabilities for the case when all origins are active
+cout<<obscpr[0]<<" "<<obscpr[1]<<" "<<obscpr[2]<<" "<<obscpr[3]<<" "<<obscpr[4]<<" obscpr \n";//prints obscuring probabilities for the case when all origins are active
 
+double logxj[3406],logxjr[3406]; //for logged data, size corresponds to the length of the data array
 
-double logxj[15000],logxjr[15000]; //for logged data, size corresponds to the length of the data array
-
-double F1[15000]; //for profile
+double F1[3406]; //for profile
 
 double logvec2=0; //for squared profiles term
+
 
 //computation of the initial value of the profile in two parts
 
@@ -1618,32 +1598,34 @@ for (i6=0;i6<N1;++i6){
 
 F1[i6]=0;
 
-
+if ((i6<minNA)||(i6>maxNA)){//taking into account the unsequencable region
 
 	logxj[i6]=log(xj[i6]);
 
 	logxjr[i6]=log(xjr[i6]);
+}
+else{
 
+	logxj[i6]=0;
 
+	logxjr[i6]=0;
+}
 
 
 	for (i4=0;i4<L;++i4){
 
-
-
 		F1[i6]=F1[i6]+(1.0/(double) L)*indw(i6-xst1[i4]);
 
+	}
+
+	if ((i6<minNA)||(i6>maxNA)){//taking into account the unsequencable region
+
+	logvec2=logvec2+logxj[i6]*logxj[i6]-2*logxj[i6]*log((1-b)*F1[i6]+0.5*b)+log((1-b)*F1[i6]+0.5*b)*log((1-b)*F1[i6]+0.5*b)+logxjr[i6]*logxjr[i6]-2*logxjr[i6]*log((1-b)*(1-F1[i6])+0.5*b)+log((1-b)*(1-F1[i6])+0.5*b)*log((1-b)*(1-F1[i6])+0.5*b);
 
 
 	}
 
-
-	logvec2=logvec2+logxj[i6]*logxj[i6]-2*logxj[i6]*log((1-b)*F1[i6]+0.5*b)+log((1-b)*F1[i6]+0.5*b)*log((1-b)*F1[i6]+0.5*b)+logxjr[i6]*logxjr[i6]-2*logxjr[i6]*log((1-b)*(1-F1[i6])+0.5*b)+log((1-b)*(1-F1[i6])+0.5*b)*log((1-b)*(1-F1[i6])+0.5*b);
-
 }
-
-
-//cout<<obscpr[0]<<" "<<obscpr[1]<<" "<<obscpr[2]<<" "<<obscpr[3]<<" "<<obscpr[4]<<" obscpr 2\n";//prints obscuring probabilities for the case when all origins are active
 
 
 
@@ -1651,13 +1633,22 @@ F1[i6]=0;
 	for (i6=N1;i6<N1+N2;++i6){
 
 
+
 		F1[i6]=0;
+
+
+		if ((i6<minNA)||(i6>maxNA)){
 
 		logxj[i6]=log(xj[i6]);
 
 		logxjr[i6]=log(xjr[i6]);
+		}
+		else{
 
-//cout<<obscpr[0]<<" "<<obscpr[1]<<" "<<obscpr[2]<<" "<<obscpr[3]<<" "<<obscpr[4]<<" "<<i6<<" obscpr \n";//prints obscuring probabilities for the case when all origins are active
+			logxj[i6]=0;
+
+			logxjr[i6]=0;
+		}
 
 
 		for (i4=0;i4<L;++i4){
@@ -1665,52 +1656,55 @@ F1[i6]=0;
 
 			F1[i6]=F1[i6]+(1.0/(double) L)*indw(i6-xst2[i4]-N1);
 
+
 		}
 
 
+
+		if ((i6<minNA)||(i6>maxNA)){
+
 		logvec2=logvec2+logxj[i6]*logxj[i6]-2*logxj[i6]*log((1-b)*F1[i6]+0.5*b)+log((1-b)*F1[i6]+0.5*b)*log((1-b)*F1[i6]+0.5*b)+logxjr[i6]*logxjr[i6]-2*logxjr[i6]*log((1-b)*(1-F1[i6])+0.5*b)+log((1-b)*(1-F1[i6])+0.5*b)*log((1-b)*(1-F1[i6])+0.5*b);
+
+
+		}
+
 
 	}
 
 
-//cout<<obscpr[0]<<" "<<obscpr[1]<<" "<<obscpr[2]<<" "<<obscpr[3]<<" "<<obscpr[4]<<" obscpr 3\n";//prints obscuring probabilities for the case when all origins are active
 
 
-	diff21m=mean(temp2,1,L); //not used
-
-	diff23m=mean(temp3,1,L);
-
-	diff31m=mean(temp4,1,L);
 
 
-//mean and sd which takes into account licensed origins only
 
-	double	diff21m1=meanp(t21diff,L,fi2,fi1);
+	diff21m=mean(temp2,1,M/16); //not used
 
-		diff21s=sqrt(varp(t21diff,L,fi2,fi1));
+	diff23m=mean(temp3,1,M/16);
 
+	diff31m=mean(temp4,1,M/16);
 
-double		diff23m1=meanp(t23diff,L,fi2,fi3);
-
-		diff23s=sqrt(varp(t23diff,L,fi2,fi3));
+	//mean and sd which takes into account licensed origins only
 
 
-double		diff31m1=meanp(t31diff,L,fi3,fi1);
+	double	diff21m1=meanp(t21diff,M/16,fi2,fi1);
 
-		diff31s=sqrt(varp(t31diff,L,fi3,fi1));
+		diff21s=sqrt(varp(t21diff,M/16,fi2,fi1));
 
+double		diff23m1=meanp(t23diff,M/16,fi2,fi3);
 
-//cout<<obscpr[0]<<" "<<obscpr[1]<<" "<<obscpr[2]<<" "<<obscpr[3]<<" "<<obscpr[4]<<" obscpr 4\n";//prints obscuring probabilities for the case when all origins are active
+		diff23s=sqrt(varp(t23diff,M/16,fi2,fi3));
 
+double		diff31m1=meanp(t31diff,M/16,fi3,fi1);
 
-//computes the amount of time each of the firing time differences is licensed
+		diff31s=sqrt(varp(t31diff,M/16,fi3,fi1));
 
-int dp21=dotprodpp(fi1,fi2,fi3,L,2,1);
+		//computes the amount of time each of the firing time differences is licensed
 
-int dp23=dotprodpp(fi1,fi2,fi3,L,2,3);
+int dp21=dotprodpp(fi1,fi2,fi3,M/16,2,1);
 
-int dp31=dotprodpp(fi1,fi2,fi3,L,3,1);
+int dp23=dotprodpp(fi1,fi2,fi3,M/16,2,3);
 
+int dp31=dotprodpp(fi1,fi2,fi3,M/16,3,1);
 
 //set counters to zero
 
@@ -1730,14 +1724,9 @@ int ii=0;
 
 int burnina=0;//auxiliary value
 
-//cout<<obscpr[0]<<" "<<obscpr[1]<<" "<<obscpr[2]<<" "<<obscpr[3]<<" "<<obscpr[4]<<" obscpr 5\n";//prints obscuring probabilities for the case when all origins are active
-
-
 for (i1=0;i1<it;++i1){
 
 printf("%d\n",i1);
-
-
 
 if (ii<4){
 
@@ -1785,7 +1774,9 @@ if (i1==burnina+burnin0/(pow(2,ii))){
 
 	sum123s=sqrt(((double) L-2)/((double) L-1))*sum123s;
 
-//assigning values to firing times, licensing indicators, collision points
+
+	//assigning values to firing times, licensing indicators, collision points
+
 
 	for (int ib=L/2;ib<L;++ib) {
 
@@ -1813,16 +1804,15 @@ if (i1==burnina+burnin0/(pow(2,ii))){
 
 }
 
-
 //tuning the sd for random walk
 
 
 if ((i1+1)%25==0){
 
 	printf("rat1 %lf\n",(double) res1a/(double) res1);// acceptance rate for t1+t2+t3 move
-	printf("rat2 %lf\n",(double) res2a/(double) res2);//acceptance rate for time difference move
+	printf("rat2 %lf\n",(double) res2a/(double) res2);//acceptance rate for tie difference move
 	printf("ratb %lf\n",(double) resba/(double) resb);//acceptance rate for b
-	printf("rattau %lf\n",(double) restaua/(double) restau); //acceptance rate for tau
+	printf("rattau %lf\n",(double) restaua/(double) restau);//acceptance rate for tau
 
 	if (i1<97375){
 
@@ -1842,6 +1832,10 @@ else{
 	if ((double) restaua/(double) restau>0.4) taus=1.1*taus;
 }
 	}
+
+	cout<<s21*diff21s<<" "<<s23*diff23s<<" "<<s31*diff31s<<"\n";
+
+	cout<<bs<<"\n";
 
 
 
@@ -1874,15 +1868,18 @@ while((by<0)||(by>1)){
 
 resb+=1;
 
+
 //MH step computations for b (acceptance probability)
 
 double pow_alpha_b=0;
 
 double logvec_b=0;
 
-
+double check=0.0;
 
 for (i12=0;i12<N1+N2;++i12){
+
+	if ((i12<minNA)||(i12>maxNA)){
 
 	double incr=(log((1-by)*F1[i12]+0.5*by)-log((1-b)*F1[i12]+0.5*b))*(2*logxj[i12]-log((1-b)*F1[i12]+0.5*b)-log((1-by)*F1[i12]+0.5*by))+(log((1-by)*(1-F1[i12])+0.5*by)-log((1-b)*(1-F1[i12])+0.5*b))*(2*logxjr[i12]-log((1-b)*(1-F1[i12])+0.5*b)-log((1-by)*(1-F1[i12])+0.5*by));
 
@@ -1890,9 +1887,9 @@ for (i12=0;i12<N1+N2;++i12){
 
 	pow_alpha_b+=(incr+(1.0/tau)*(log((1-by)*F1[i12]+0.5*by)-log((1-b)*F1[i12]+0.5*b)+log((1-by)*(1-F1[i12])+0.5*by)-log((1-b)*(1-F1[i12])+0.5*b)));
 
+	}
+
 }
-
-
 
 
 
@@ -1933,9 +1930,9 @@ if (logvec2<0) {//check that square term is not negative
 	exit(1);
 }
 
-f1<<b<<"\n"; //write b to a file
+f1<<b<<"\n";//write b to a file
 
-cout<<b<<" b\n"; //print b
+cout<<b<<" b\n";//print b
 
 
 //sampling tau
@@ -1952,14 +1949,12 @@ while((tauy<=0)){
 
 restau+=1;
 
-//MH step computation for tau
+//acceptance probability
+
 
 double pow_alpha_tau=0;
 
-//acceptance probability
-
-pow_alpha_tau+=((N1+N2+taualpha-1)*log(tauy/tau)+0.5*logvec2*(tau-tauy)+0.25*(N1+N2)*((1.0/tau)-(1.0/tauy))+taubeta*(tau-tauy));
-
+pow_alpha_tau+=((N1+N2-(maxNA-minNA+1)+taualpha-1)*log(tauy/tau)+0.5*logvec2*(tau-tauy)+0.25*(N1+N2-(maxNA-minNA+1))*((1.0/tau)-(1.0/tauy))+taubeta*(tau-tauy));
 
 //acceptance-rejection for tau
 
@@ -1984,11 +1979,9 @@ else{
 	}
 }
 
-
  cout<<tau<<"\n"; //print tau
 
  f2<<tau<<"\n"; //write tau to a file
-
 
  //sampling mu1,mu2,mu3, precisions sig1,sig2,sig3
 
@@ -1998,12 +1991,14 @@ std::normal_distribution<double> normrndp3((1.0/3.0)*(mean(t123sum,1,L)-2*mean(t
 
 
 
+
+
 mu1=normrndp1(gen);
 mu2=normrndp2(gen);
 mu3=normrndp3(gen);
 
-
 //auxiliary values for precisions
+
 
 double sig11=0.5*((1.0/9.0)*(dotprod(t123sum,t123sum,1,L)+4.0*dotprod(t21diff,t21diff,1,L)+dotprod(t23diff,t23diff,1,L)-4.0*dotprod(t123sum,t21diff,1,L)-4.0*dotprod(t21diff,t23diff,1,L)+2.0*dotprod(t123sum,t23diff,1,L))-(2.0/3.0)*mu1*(sum(t123sum,1,L)-2*sum(t21diff,1,L)+sum(t23diff,1,L))+L*mu1*mu1+2*sig1beta);
 double sig21=0.5*((1.0/9.0)*(dotprod(t123sum,t123sum,1,L)+dotprod(t21diff,t21diff,1,L)+dotprod(t23diff,t23diff,1,L)+2.0*dotprod(t123sum,t21diff,1,L)+2.0*dotprod(t21diff,t23diff,1,L)+2.0*dotprod(t123sum,t23diff,1,L))-(2.0/3.0)*mu2*(sum(t123sum,1,L)+sum(t21diff,1,L)+sum(t23diff,1,L))+L*mu2*mu2+2*sig2beta);
@@ -2018,20 +2013,18 @@ sig1=gammarndp1(gen);
 sig2=gammarndp2(gen);
 sig3=gammarndp3(gen);
 
-
-
-
 //print sd
 
 cout<<sqrt(1.0/sig3)<<" sig3 \n";
 cout<<sqrt(1.0/sig2)<<" sig2 \n";
 cout<<sqrt(1.0/sig1)<<" sig1 \n";
 
-//write every 10th value of the mu and sd into a file
+//every 10th write iteration values of the mu and sd into a file
 
 if ((i1+1)%10==0) f4<<mu1<<" "<<mu2<<" "<<mu3<<"\n";
 
 if ((i1+1)%10==0) f5<<sqrt(1.0/sig1)<<" "<<sqrt(1.0/sig2)<<" "<<sqrt(1.0/sig3)<<"\n";
+
 
 //how many times each of the origins is active
 
@@ -2039,13 +2032,10 @@ cout<<sumfi1<<" sumfi1 "<<sumfi2<<" sumfi2 "<<sumfi3<<" sumfi3\n";
 
 //probability of being obscured given certain amount of origins is licensed
 
-cout<<obscM<<" check\n";
-
-cout<<obscpr[0]<<" check\n";
-
 cout<<obscpr[0]/(double) obscM<<" "<<obscpr[1]/(double) obscM<<" "<<obscpr[2]/(double) obscM<<" "<<obscpr[3]/(double) obscM<<" "<<obscpr[4]/(double) obscM<<"\n";
 
 cout<<obscpr1[0]/(double) obsc1M<<" "<<obscpr1[1]/(double) obsc1M<<" "<<obscpr3[0]/(double) obsc3M<<" "<<obscpr3[1]/(double) obsc3M<<"\n";
+
 
 //sampling q
 
@@ -2061,7 +2051,6 @@ q2y=betarnd(sumfi2+1,L-sumfi2+1);
 
 cout<<q2<<" q2 "<<q2y<<" q2y\n"; //q2 and proposal for it
 
-
 q2=q2y;
 
 
@@ -2069,7 +2058,6 @@ q2=q2y;
 q3y=betarnd(sumfi3+1,L-sumfi3+1);
 
 cout<<q3<<" q3 "<<q3y<<" q3y\n"; //q3 and proposal for it
-
 
 q3=q3y;
 
@@ -2082,7 +2070,6 @@ f8<<q1<<" "<<q2<<" "<<q3<<"\n"; //write q to a file
 
 
 //updating time parameters
-
 
 for (i5=0;i5<L;++i5){
 
@@ -2098,6 +2085,7 @@ res2+=1;
 res3+=1;
 
 //updating t1+t2+t3
+
 
 if (i1>0) {
 	std::normal_distribution<double> normrnd1(sum123m,sum123s);
@@ -2119,7 +2107,6 @@ double sum123my,sum123sy,diff21my,diff21sy,diff23my,diff23sy,diff31my,diff31sy,t
 
 
 //mean and variance of the proposal
-
 
 sum123my=sum123m+(1.0/L)*(y123-t123sum[i5]);
 
@@ -2144,15 +2131,15 @@ else         pow1=(-pow(t123sum[i5]-sum123my,2))/(2.0*pow(sum1230,2))+pow(y123-s
 
 
 
-
+//collision points for new value of parameter
 
 int xsty1,xsty2;
 
-//collision points for new value of parameter
 
 xstar(y123,t21diff[i5],t23diff[i5],N1,N2,xsty1,xsty2,fi1[i5],fi2[i5],fi3[i5]);
 
 //check collision point values are feasible
+
 
 if (((xsty1<0)||(xsty2<0))||((xsty1>N1)||(xsty2>N2))){
 
@@ -2207,8 +2194,8 @@ int sk1=0;
 
 if ((((xsty1==0)&&(xsty2==0))||((xsty1==N1)&&(xsty2==N2)))) sk1=1;
 
-//acceptance-rejection step
 
+//acceptance-rejection step
 
 if ((pow_alpha>=0)&&(sk1==0)){
 
@@ -2229,7 +2216,6 @@ if ((pow_alpha>=0)&&(sk1==0)){
 
 
 	 logvec2+=(sumfdiff1+sumfdiff2);
-
 
 	 xst1[i5]=xsty1;
 	 xst2[i5]=xsty2;
@@ -2254,8 +2240,6 @@ else{//same when one has to sample from uniform[0,1]
 			double diff=(y123-t123sum[i5])/((double) L);
 
 			t123sum[i5]=y123;
-
-			//shift to preserve symmetry
 
 			for (int i51=0;i51<L;++i51){
 
@@ -2292,7 +2276,6 @@ int flago,flago1,flago3;
 
 //proposals to determine probabilities of moving into a certain region (notation analogous to obscpr* values)
 
-
 int obscpry[5],obscpr1y[2],obscpr3y[2];
 
 //normalising factor for the region where all the origins are licensed
@@ -2313,17 +2296,13 @@ double norma1=fmax(obscpr1[1]/((double) obsc1M),EPSO)+fmax(obscpr1[0]/((double) 
 
 double a110_1=fmax(obscpr3[1]/((double) obsc3M),EPSO)/norma3,a110_0=1-a110_1,a011_1=fmax(obscpr1[1]/((double) obsc1M),EPSO)/norma1,a011_0=1-a011_1;
 
-
 //choosing which region to move into according to the probabilities computed above and recording the "proposal" probability obscpry*
-
 
 if (fi1[i5]+fi2[i5]+fi3[i5]==3){//all origins are licensed
 
 for (int io=0;io<5;++io) obscpry[io]=obscpr[io];
 
 int obscc=obsc_cur(t123sum[i5],t21diff[i5],t23diff[i5],1,1,1,N1,N2);
-
-//cout<<obscc<<" obscc\n";
 
 
 if (uo<a010) {
@@ -2333,6 +2312,7 @@ if (uo<a010) {
 	flago3=0;
 
 	if (obscc!=2) {
+
 
 		obscpry[obscc]-=1;
 
@@ -2391,7 +2371,6 @@ else {
 
 			obscpry[3]+=1;
 		}
-
 
 		//check that proposal count does not go below zero
 
@@ -2484,9 +2463,20 @@ for (int io1=0;io1<2;++io1) {
 
 
 			flago3=0;
+			//check that proposal count does not go below zero
 
+			if (obscpr1y[obscc]<0) {
 
+				cout<<fi1[i5]<<" "<<fi2[i5]<<" "<<fi3[i5]<<"\n";
 
+				cout<<t21diff[i5]<<" "<<t23diff[i5]<<" "<<N1<<" "<<N2<<"\n";
+
+				cout<<fire(t123sum[i5],t21diff[i5],t23diff[i5],N1,N2,3)<<" obsc 3\n";
+
+				cout<<obscpr1[obscc]<<" "<<obscpr1y[obscc]<<" "<<obscc<<" "<<a011_0<<" 011 0\n";
+				exit(1);
+
+			}
 		}
 		else {
 
@@ -2501,7 +2491,14 @@ for (int io1=0;io1<2;++io1) {
 
 			flago3=1;
 
+			//check that proposal count does not go below zero
 
+			if (obscpr1y[obscc]<0) {
+
+				cout<<obscpr1[obscc]<<" "<<obscpr1y[obscc]<<" "<<obscc<<" "<<a011_1<<" 011 1\n";
+				exit(1);
+
+			}
 		}
 
 
@@ -2530,7 +2527,14 @@ for (int io1=0;io1<2;++io1) {
 
 				flago1=0;
 
+				//check that proposal count does not go below zero
 
+				if (obscpr3y[obscc]<0) {
+
+					cout<<obscpr3[obscc]<<" "<<obscpr3y[obscc]<<" "<<obscc<<" "<<a110_0<<" 110 0\n";
+					exit(1);
+
+				}
 			}
 			else {
 
@@ -2544,7 +2548,14 @@ for (int io1=0;io1<2;++io1) {
 
 				flago1=1;
 
+				//check that proposal count does not go below zero
 
+				if (obscpr3y[obscc]<0) {
+
+					cout<<obscpr3[obscc]<<" "<<obscpr3y[obscc]<<" "<<obscc<<" "<<a110_1<<" 110 1\n";
+					exit(1);
+
+				}
 			}
 
 		}
@@ -2574,7 +2585,6 @@ double a110y_1=fmax(obscpr3y[1]/((double) obsc3M),EPSO)/normay3,a110y_0=1-a110y_
 
 //parameters and generators for sampling from truncated normal distribution
 
-
 double y31,z,up,rho;
 
 
@@ -2591,7 +2601,6 @@ double mumin21=(N1-diff21m1)/(s21*diff21s), mumin23=(N2-2-diff23m1)/(s23*diff23s
 
 double mumin21m=(-N1+2-diff21m1)/(s21*diff21s), mumin23m=(-N2-diff23m1)/(s23*diff23s);
 
-
 //sampling from truncated normal/normal depending on the region
 
 if (fi1[i5]+fi2[i5]+fi3[i5]==3){//all origins are licensed
@@ -2599,8 +2608,6 @@ if (fi1[i5]+fi2[i5]+fi3[i5]==3){//all origins are licensed
 if (flago==1){//middle origin obscured
 
 	y31=normrnd31(gen); //proposal for t3-t1
-
-
 
 	if (y31<N1-N2){//middle origin obscured by the right one
 
@@ -2748,7 +2755,7 @@ else{
 
 
 }
-	else{//left origin is obscured
+	else{//right origin is obscured
 
 		if (diff23m1<=-N2){
 
@@ -2846,7 +2853,6 @@ else{
 
 			y21=0;
 
-
 			while (y21>-N1+2){
 
 				y21=normrnd21(gen); //proposal for t2-t1
@@ -2876,7 +2882,7 @@ else{
 
 			}
 
-			y21=s21*diff21s*y21+diff21m1;//proposal for t2-t1
+			y21=s21*diff21s*y21+diff21m1; //proposal for t2-t1
 
 
 			}
@@ -2895,19 +2901,17 @@ else{
 
 		y31=normrnd31(gen);//proposal for t3-t1
 
-
-
 		if (dp21>dp23){//t2-t1 is realised more frequently than t2-t3
 
-			y21=normrnd21(gen);//proposal for t2-t1
+			y21=normrnd21(gen); //proposal for t2-t1
 
-			y23=y21-y31;//proposal for t2-t3
+			y23=y21-y31; //proposal for t2-t3
 		}
-		else{//t2-t3 is realised more frequently than t2-t1
+		else{//t2-t3 is realised more frequently than t2-t3
 
-			y23=normrnd23(gen);//proposal for t2-t3
+			y23=normrnd23(gen); //proposal for t2-t3
 
-			y21=y23+y31;//proposal for t2-t1
+			y21=y23+y31; //proposal for t2-t1
 		}
 
 
@@ -2916,7 +2920,7 @@ else{
 
 		if (fi1[i5]==0){//left origin is not licensed
 
-			y21=normrnd21(gen);//proposal for t2-t1
+			y21=normrnd21(gen); //proposal for t2-t1
 		}
 
 		else{//left origin is licensed
@@ -3012,7 +3016,7 @@ else{
 
 		if (fi3[i5]==0){//right origin is not licensed
 
-			y23=normrnd23(gen);//proposal for t2-t3
+			y23=normrnd23(gen); //proposal for t2-t3
 
 		}
 		else{//right origin is licensed
@@ -3057,7 +3061,7 @@ else{
 			while ((y23>=N2-2)||(y23<=-N2)){
 
 
-				y23=normrnd23(gen);//proposal for t2-t3
+				y23=normrnd23(gen); //proposal for t2-t3
 
 			}
 
@@ -3120,7 +3124,7 @@ int sk2=0;
 
 //proposal collision points
 
-xstar(t123sum[i5],y21,y23,N1,N2,xsty1,xsty2,fi1[i5],fi2[i5],fi3[i5]); //collision points for proposal
+xstar(t123sum[i5],y21,y23,N1,N2,xsty1,xsty2,fi1[i5],fi2[i5],fi3[i5]);
 
 //criteria to eliminate flat profiles
 
@@ -3143,7 +3147,6 @@ if (((xsty1<0)||(xsty2<0))||((xsty1>N1)||(xsty2>N2))){
 
 
 double pow2=0;
-
 
 //not used
 
@@ -3244,21 +3247,17 @@ else {
 	diff21sy=sqrt(fi2[i5]*fi1[i5]*(y21*y21-t21diff[i5]*t21diff[i5])+dp21*(diff21m1*diff21m1-diff21my1*diff21my1));
 }
 
-
 //mean value t2-t3
 
 if (dp23>0) diff23my1=diff23m1+(1.0/dp23)*fi2[i5]*fi3[i5]*(y23-t23diff[i5]);
 
 else diff23my1=diff23m1;
 
-
 //sd t2-t3
 
 if (dp23>1) diff23sy=sqrt(diff23s*diff23s+(1.0/(dp23-1.0))*fi2[i5]*fi3[i5]*(y23*y23-t23diff[i5]*t23diff[i5])+((double) dp23/(dp23-1.0))*(diff23m1*diff23m1-diff23my1*diff23my1));
 
-else diff23sy=sqrt(fi2[i5]*fi3[i5]*(y23*y23-t23diff[i5]*t23diff[i5])+dp23*(diff23m1*diff23m1-diff23my1*diff23my1));
-
-
+else sqrt(fi2[i5]*fi3[i5]*(y23*y23-t23diff[i5]*t23diff[i5])+dp23*(diff23m1*diff23m1-diff23my1*diff23my1));
 
 //mean value t3-t1
 
@@ -3266,13 +3265,12 @@ if (dp31>0) diff31my1=diff31m1+(1.0/dp31)*fi3[i5]*fi1[i5]*(y31-t31diff[i5]);
 
 else diff31my1=diff31m1;
 
-
 //sd t3-t1
-
 
 if (dp31>1) diff31sy=sqrt(diff31s*diff31s+(1.0/(dp31-1.0))*fi3[i5]*fi1[i5]*(y31*y31-t31diff[i5]*t31diff[i5])+((double) dp31/(dp31-1.0))*(diff31m1*diff31m1-diff31my1*diff31my1));
 
 else diff31sy=sqrt(fi3[i5]*fi1[i5]*(y31*y31-t31diff[i5]*t31diff[i5])+dp31*(diff31m1*diff31m1-diff31my1*diff31my1));
+
 
 
 //not used
@@ -3282,17 +3280,13 @@ if (dp21>0) diff21my=diff21m+(1.0/dp21)*(tempy21-temp2[i5])*fi2[i5]*fi1[i5];
 else diff21my=diff21m;
 
 
-
 if (dp23>0) diff23my=diff23m+(1.0/dp23)*fi2[i5]*fi3[i5]*(tempy23-temp3[i5]);
 
 else diff23my=diff23m;
 
-
-
 if (dp31>0) diff31my=diff31m+(1.0/dp31)*fi3[i5]*fi1[i5]*(tempy31-temp4[i5]);
 
 else diff31my=diff31m;
-
 
 
 //for quantiles of standard normal distribution of the proposal
@@ -3301,7 +3295,6 @@ double mumin21y=(N1-diff21my1)/(s21*diff21sy);
 double mumin23y=(N2-2-diff23my1)/(s23*diff23sy);
 double mumin21my=(-N1+2-diff21my1)/(s21*diff21sy);
 double mumin23my=(-N2-diff23my1)/(s23*diff23sy);
-
 
 //conditional proposal density
 
@@ -3331,7 +3324,7 @@ if (fi1[i5]*fi2[i5]*fi3[i5]==1){//all origins are licensed
 			pow2=pow(y21-diff21m1,2.0)/(2.0*pow(s21*diff21s,2.0))+log(s21*diff21s)+log(0.5+0.5*erf(mumin21m/sqrt(2.0)));
 
 
-			if (flago3==0) pow2-=log(a100);//right origin of the proposal is not obscured
+			if (flago3==0) pow2-=log(a100); //right origin of the proposal is not obscured
 
 			else pow2-=log(a101);//right origin of the proposal is obscured
 
@@ -3392,7 +3385,7 @@ if (fi1[i5]*fi2[i5]*fi3[i5]==1){//all origins are licensed
 
 		if (fire(t123sum[i5],t21diff[i5],t23diff[i5],N1,N2,1)==0){//current left origin is obscured
 
-			if (fire(t123sum[i5],t21diff[i5],t23diff[i5],N1,N2,3)==0) pow2+=log(a101y);//current right origin is obscured
+			if (fire(t123sum[i5],t21diff[i5],t23diff[i5],N1,N2,3)==0) pow2+=log(a101y); //current right origin is obscured
 
 			else pow2+=log(a100y);
 
@@ -3400,9 +3393,9 @@ if (fi1[i5]*fi2[i5]*fi3[i5]==1){//all origins are licensed
 			pow2-=(pow(t21diff[i5]-diff21my1,2.0)/(2.0*pow(s21*diff21sy,2.0))+log(s21*diff21sy)+log(0.5+0.5*erf(mumin21my/sqrt(2.0))));
 
 		}
-			else{//current left origin is not obscured
+			else{//current right origin is not obscured
 
-				if (fire(t123sum[i5],t21diff[i5],t23diff[i5],N1,N2,3)==0) pow2+=log(a001y); //current right origin is obscured
+				if (fire(t123sum[i5],t21diff[i5],t23diff[i5],N1,N2,3)==0) pow2+=log(a001y);
 
 				else pow2+=log(a000y);
 
@@ -3413,7 +3406,7 @@ if (fi1[i5]*fi2[i5]*fi3[i5]==1){//all origins are licensed
 			}
 
 
-			if (fire(t123sum[i5],t21diff[i5],t23diff[i5],N1,N2,3)==0){ //current right origin is obscured
+			if (fire(t123sum[i5],t21diff[i5],t23diff[i5],N1,N2,3)==0){//current right origin is not obscured
 
 				pow2-=(pow(t23diff[i5]-diff23my1,2.0)/(2.0*pow(s23*diff23sy,2.0))+log(s23*diff23sy)+log(0.5+0.5*erf(mumin23my/sqrt(2.0))));
 			}
@@ -3436,12 +3429,9 @@ if (fi2[i5]==0){//middle origin is not licensed
 	pow2=pow(y31-diff31m1,2.0)/(2.0*pow(s31*diff31s,2.0))+log(s31*diff31s);
 
 
-
 if (dp21>dp23) pow2+=(pow(y21-diff21m1,2.0)/(2.0*pow(s21*diff21s,2.0))+log(s21*diff21s)); //t2-t1  is realised more frequently than t2-t3
 
 else pow2+=(pow(y23-diff23m1,2.0)/(2.0*pow(s23*diff23s,2.0))+log(s23*diff23s)); //t2-t3  is realised more frequently than t2-t3
-
-
 
 
 	pow2-=(pow(t31diff[i5]-diff31my1,2.0)/(2.0*pow(s31*diff31sy,2.0))+log(s31*diff31sy));
@@ -3472,7 +3462,7 @@ else{
 
 		//current left origin is not obscured
 
-		if (t21diff[i5]>-N1+2) pow2-=(pow(t21diff[i5]-diff21my1,2.0)/(2.0*pow(s21*diff21sy,2.0))+log(s21*diff21sy)+log(0.5*erf(mumin21y/sqrt(2.0))-0.5*erf(mumin21my/sqrt(2.0)))-log(a110y_0));
+		if (((fire(t123sum[i5],t21diff[i5],t23diff[i5],N1,N2,1)==1)&&(t21diff[i5]>-N1+2))||((fire(t123sum[i5],t21diff[i5],t23diff[i5],N1,N2,1)==0)&&(t23diff[i5]>N2-2))) pow2-=(pow(t21diff[i5]-diff21my1,2.0)/(2.0*pow(s21*diff21sy,2.0))+log(s21*diff21sy)+log(0.5*erf(mumin21y/sqrt(2.0))-0.5*erf(mumin21my/sqrt(2.0)))-log(a110y_0));
 
 		//current left origin is obscured
 
@@ -3491,10 +3481,9 @@ else{
 
 		else pow2+=(pow(y23-diff23m1,2.0)/(2.0*pow(s23*diff23s,2.0))+log(s23*diff23s)+log(0.5+0.5*erf(mumin23m/sqrt(2.0)))-log(a011_1));
 
-
 		//current right origin is not obscured
 
-		if (t23diff[i5]>-N2) pow2-=(pow(t23diff[i5]-diff23my1,2.0)/(2.0*pow(s23*diff23sy,2.0))+log(s23*diff23sy)+log(0.5*erf(mumin23y/sqrt(2.0))-0.5*erf(mumin23my/sqrt(2.0)))-log(a011y_0));
+		if (((fire(t123sum[i5],t21diff[i5],t23diff[i5],N1,N2,3)==1)&&(t23diff[i5]>-N2))||((fire(t123sum[i5],t21diff[i5],t23diff[i5],N1,N2,3)==0)&&(t21diff[i5]>N1))) pow2-=(pow(t23diff[i5]-diff23my1,2.0)/(2.0*pow(s23*diff23sy,2.0))+log(s23*diff23sy)+log(0.5*erf(mumin23y/sqrt(2.0))-0.5*erf(mumin23my/sqrt(2.0)))-log(a011y_0));
 
 		//current right origin is obscured
 
@@ -3517,12 +3506,6 @@ else{
 
 
 }
-
-
-
-
-
-
 
 //MH step computation
 
@@ -3582,7 +3565,15 @@ int count1=0;
 for (i23=0;i23<L;++i23) {
 
 
+
+
 	if ((xst1[i23]>minf1)&&(xst1[i23]<maxf1)) {
+
+
+
+
+
+
 
 		count1+=1;
 
@@ -3593,7 +3584,6 @@ for (i23=0;i23<L;++i23) {
 	}
 }
 
-
 //identifying parts of the profile affected by these collision points
 
 Fmin1=F1[minf1];
@@ -3603,7 +3593,9 @@ Fmin2=F1[minf2+N1];
 
 xsta1[count1+1]=maxf1;
 
+
 //sorting collision points affected by the proposal
+
 
 qsort((void*)xsta1,count1+2,sizeof(int),compare_ints);
 
@@ -3613,24 +3605,48 @@ qsort((void*)xsta1,count1+2,sizeof(int),compare_ints);
 
 //term which depends on the collision points only
 
+//we take into account unsequencable region
+
+
 for (i2=0;i2<count1+1;++i2){
 
+	if (xsta1[i2]<minNA){
 
-double incr1=log(((1-b)*Fmin1+0.5*b+(1-b)*((double) i2/L))*((1-b)*Fmin1+0.5*b+(1-b)*((double) i2/L))+(1-b)*(1.0/L)*((1-b)*Fmin1+0.5*b+(1-b)*((double) i2/L))*sgn1)*(-xsta1[i2+1]+xsta1[i2])*log(1+(1-b)*((double) sgn1)/(L*((1-b)*Fmin1+0.5*b)+(1-b)*i2));
+		int NA=min(xsta1[i2+1],minNA-1);
 
-double incr1r=log(((1-b)*(1-Fmin1)+0.5*b-(1-b)*((double) i2/L))*((1-b)*(1-Fmin1)+0.5*b-(1-b)*((double) i2/L))-(1-b)*(1.0/L)*((1-b)*(1-Fmin1)+0.5*b-(1-b)*((double) i2/L))*sgn1)*(-xsta1[i2+1]+xsta1[i2])*log(1-(1-b)*((double) sgn1)/(L*((1-b)*(1-Fmin1)+0.5*b)-(1-b)*i2));
+double incr1=log(((1-b)*Fmin1+0.5*b+(1-b)*((double) i2/L))*((1-b)*Fmin1+0.5*b+(1-b)*((double) i2/L))+(1-b)*(1.0/L)*((1-b)*Fmin1+0.5*b+(1-b)*((double) i2/L))*sgn1)*(-NA+xsta1[i2])*log(1+(1-b)*((double) sgn1)/(L*((1-b)*Fmin1+0.5*b)+(1-b)*i2));
+
+double incr1r=log(((1-b)*(1-Fmin1)+0.5*b-(1-b)*((double) i2/L))*((1-b)*(1-Fmin1)+0.5*b-(1-b)*((double) i2/L))-(1-b)*(1.0/L)*((1-b)*(1-Fmin1)+0.5*b-(1-b)*((double) i2/L))*sgn1)*(-NA+xsta1[i2])*log(1-(1-b)*((double) sgn1)/(L*((1-b)*(1-Fmin1)+0.5*b)-(1-b)*i2));
 
 
 prodfdiff1_log+=incr1;
 
 prodfdiff1r_log+=incr1r;
 
-prodfdiff1+=(incr1-(1.0/tau)*(-xsta1[i2+1]+xsta1[i2])*log(1+(1-b)*((double) sgn1)/(L*((1-b)*Fmin1+0.5*b)+(1-b)*i2)));
+prodfdiff1+=(incr1-(1.0/tau)*(-NA+xsta1[i2])*log(1+(1-b)*((double) sgn1)/(L*((1-b)*Fmin1+0.5*b)+(1-b)*i2)));
 
-prodfdiff1r+=(incr1r-(1.0/tau)*(-xsta1[i2+1]+xsta1[i2])*log(1-(1-b)*((double) sgn1)/(L*((1-b)*(1-Fmin1)+0.5*b)-(1-b)*i2)));
+prodfdiff1r+=(incr1r-(1.0/tau)*(-NA+xsta1[i2])*log(1-(1-b)*((double) sgn1)/(L*((1-b)*(1-Fmin1)+0.5*b)-(1-b)*i2)));
+	}
+
+	if (xsta1[i2+1]>maxNA){
+
+		int NA=max(xsta1[i2],maxNA+1);
+
+double incr1=log(((1-b)*Fmin1+0.5*b+(1-b)*((double) i2/L))*((1-b)*Fmin1+0.5*b+(1-b)*((double) i2/L))+(1-b)*(1.0/L)*((1-b)*Fmin1+0.5*b+(1-b)*((double) i2/L))*sgn1)*(-xsta1[i2+1]+NA)*log(1+(1-b)*((double) sgn1)/(L*((1-b)*Fmin1+0.5*b)+(1-b)*i2));
+
+double incr1r=log(((1-b)*(1-Fmin1)+0.5*b-(1-b)*((double) i2/L))*((1-b)*(1-Fmin1)+0.5*b-(1-b)*((double) i2/L))-(1-b)*(1.0/L)*((1-b)*(1-Fmin1)+0.5*b-(1-b)*((double) i2/L))*sgn1)*(-xsta1[i2+1]+NA)*log(1-(1-b)*((double) sgn1)/(L*((1-b)*(1-Fmin1)+0.5*b)-(1-b)*i2));
 
 
-//check that the log expression is not negative
+prodfdiff1_log+=incr1;
+
+prodfdiff1r_log+=incr1r;
+
+prodfdiff1+=(incr1-(1.0/tau)*(-xsta1[i2+1]+NA)*log(1+(1-b)*((double) sgn1)/(L*((1-b)*Fmin1+0.5*b)+(1-b)*i2)));
+
+prodfdiff1r+=(incr1r-(1.0/tau)*(-xsta1[i2+1]+NA)*log(1-(1-b)*((double) sgn1)/(L*((1-b)*(1-Fmin1)+0.5*b)-(1-b)*i2)));
+	}
+
+	//check that the log expression is not negative
 
 	if ((1.0+(1-b)*((double) sgn1)/(L*((1-b)*Fmin1+0.5*b)+(1-b)*i2))<0) {
 
@@ -3639,9 +3655,8 @@ prodfdiff1r+=(incr1r-(1.0/tau)*(-xsta1[i2+1]+xsta1[i2])*log(1-(1-b)*((double) sg
 	}
 
 
+
 }
-
-
 //term which depends on the data xj[]
 
 double at,atr;
@@ -3654,15 +3669,18 @@ for (i3=0;i3<count1+1;++i3){
 	for (i24=xsta1[i3];i24<xsta1[i3+1];++i24) {
 
 
+
 		at+=(2*logxj[i24]);
 		atr+=(2*logxjr[i24]);
 
 	}
 
 
+
 	double incr_at1=at*log(1.0+(1-b)*((double) sgn1)/(L*((1-b)*Fmin1+0.5*b)+(1-b)*i3));
 
 	double incr_at1r=atr*log(1.0-(1-b)*((double) sgn1)/(L*((1-b)*(1-Fmin1)+0.5*b)-(1-b)*i3));
+
 
 
 	prodfdiff1+=incr_at1;
@@ -3673,9 +3691,7 @@ for (i3=0;i3<count1+1;++i3){
 
 	prodfdiff1r_log+=incr_at1r;
 
-
 	//check that the log expression is not negative
-
 
 	if ((1.0+(1-b)*((double) sgn1)/(L*((1-b)*Fmin1+0.5*b)+(1-b)*i3))<=0) {
 
@@ -3683,11 +3699,10 @@ for (i3=0;i3<count1+1;++i3){
 		exit(1);
 	}
 
-
 }
 
-
 //same computation for the right collision point
+
 
 
 int xsta2[4992];
@@ -3719,24 +3734,47 @@ qsort((void*)xsta2,count2+2,sizeof(int),compare_ints);
 
 
 
-
 for (i2=0;i2<count2+1;++i2){
 
-double incr2=log(((1-b)*Fmin2+0.5*b+(1-b)*(i2/(double) L))*((1-b)*Fmin2+0.5*b+(1-b)*(i2/(double) L))+(1-b)*(1.0/L)*((1-b)*Fmin2+0.5*b+(1-b)*(i2/(double) L))*sgn2)*log(1+(1-b)*((double) sgn2)/(L*((1-b)*Fmin2+0.5*b)+(1-b)*i2))*(-xsta2[i2+1]+xsta2[i2]);
+	if (xsta2[i2]<minNA-N1){
 
-double incr2r=log(((1-b)*(1-Fmin2)+0.5*b-(1-b)*(i2/(double) L))*((1-b)*(1-Fmin2)+0.5*b-(1-b)*(i2/(double) L))-(1-b)*(1.0/L)*((1-b)*(1-Fmin2)+0.5*b-(1-b)*(i2/(double) L))*sgn2)*log(1-(1-b)*((double) sgn2)/(L*((1-b)*(1-Fmin2)+0.5*b)-(1-b)*i2))*(-xsta2[i2+1]+xsta2[i2]);
+		int NA=min(xsta2[i2+1],minNA-N1-1);
+
+
+double incr2=log(((1-b)*Fmin2+0.5*b+(1-b)*(i2/(double) L))*((1-b)*Fmin2+0.5*b+(1-b)*(i2/(double) L))+(1-b)*(1.0/L)*((1-b)*Fmin2+0.5*b+(1-b)*(i2/(double) L))*sgn2)*log(1+(1-b)*((double) sgn2)/(L*((1-b)*Fmin2+0.5*b)+(1-b)*i2))*(-NA+xsta2[i2]);
+
+double incr2r=log(((1-b)*(1-Fmin2)+0.5*b-(1-b)*(i2/(double) L))*((1-b)*(1-Fmin2)+0.5*b-(1-b)*(i2/(double) L))-(1-b)*(1.0/L)*((1-b)*(1-Fmin2)+0.5*b-(1-b)*(i2/(double) L))*sgn2)*log(1-(1-b)*((double) sgn2)/(L*((1-b)*(1-Fmin2)+0.5*b)-(1-b)*i2))*(-NA+xsta2[i2]);
 
 
 prodfdiff2_log+=incr2;
 
 prodfdiff2r_log+=incr2r;
 
-prodfdiff2+=(incr2-(1.0/tau)*log(1+(1-b)*((double) sgn2)/(L*((1-b)*Fmin2+0.5*b)+(1-b)*i2))*(-xsta2[i2+1]+xsta2[i2]));
+prodfdiff2+=(incr2-(1.0/tau)*log(1+(1-b)*((double) sgn2)/(L*((1-b)*Fmin2+0.5*b)+(1-b)*i2))*(-NA+xsta2[i2]));
 
-prodfdiff2r+=(incr2r-(1.0/tau)*log(1-(1-b)*((double) sgn2)/(L*((1-b)*(1-Fmin2)+0.5*b)-(1-b)*i2))*(-xsta2[i2+1]+xsta2[i2]));
+prodfdiff2r+=(incr2r-(1.0/tau)*log(1-(1-b)*((double) sgn2)/(L*((1-b)*(1-Fmin2)+0.5*b)-(1-b)*i2))*(-NA+xsta2[i2]));
+
+	}
+
+	if (xsta2[i2+1]>maxNA-N1){
+
+		int NA=max(xsta2[i2],maxNA-N1+1);
 
 
+double incr2=log(((1-b)*Fmin2+0.5*b+(1-b)*(i2/(double) L))*((1-b)*Fmin2+0.5*b+(1-b)*(i2/(double) L))+(1-b)*(1.0/L)*((1-b)*Fmin2+0.5*b+(1-b)*(i2/(double) L))*sgn2)*log(1+(1-b)*((double) sgn2)/(L*((1-b)*Fmin2+0.5*b)+(1-b)*i2))*(-xsta2[i2+1]+NA);
 
+double incr2r=log(((1-b)*(1-Fmin2)+0.5*b-(1-b)*(i2/(double) L))*((1-b)*(1-Fmin2)+0.5*b-(1-b)*(i2/(double) L))-(1-b)*(1.0/L)*((1-b)*(1-Fmin2)+0.5*b-(1-b)*(i2/(double) L))*sgn2)*log(1-(1-b)*((double) sgn2)/(L*((1-b)*(1-Fmin2)+0.5*b)-(1-b)*i2))*(-xsta2[i2+1]+NA);
+
+
+prodfdiff2_log+=incr2;
+
+prodfdiff2r_log+=incr2r;
+
+prodfdiff2+=(incr2-(1.0/tau)*log(1+(1-b)*((double) sgn2)/(L*((1-b)*Fmin2+0.5*b)+(1-b)*i2))*(-xsta2[i2+1]+NA));
+
+prodfdiff2r+=(incr2r-(1.0/tau)*log(1-(1-b)*((double) sgn2)/(L*((1-b)*(1-Fmin2)+0.5*b)-(1-b)*i2))*(-xsta2[i2+1]+NA));
+
+	}
 
 	if ((1.0+(1-b)*((double) sgn2)/(L*((1-b)*Fmin2+0.5*b)+(1-b)*i2))<=0) {
 
@@ -3785,9 +3823,12 @@ prodfdiff2r_log+=incr_at2r;
 }
 
 
+
 //acceptance-rejection step
 
 //likelihood ratio
+
+
 
 pow_alpha=(prodfdiff1+prodfdiff2+prodfdiff1r+prodfdiff2r)*(tau/2.0);
 
@@ -3797,16 +3838,15 @@ pow_alpha+=(pow2-(sig1/6.0)*(2*t21diff[i5]-t23diff[i5]-2*y21+y23)*((1.0/3.0)*(t1
 
 
 
+
 //elimination criteria for flat profiles
 
 if ((((xsty1==0)&&(xsty2==0))||((xsty1==N1)&&(xsty2==N2)))) sk2=1;
 
 
 
-
 if ((pow_alpha>=0)&&(sk2==0)){
-
-//updating time differences
+	//updating time differences
 
 	t21diff[i5]=y21;
 	t23diff[i5]=y23;
@@ -3816,8 +3856,6 @@ if ((pow_alpha>=0)&&(sk2==0)){
 	temp2[i5]=tempy21;//not used
 	temp3[i5]=tempy23;
 	temp4[i5]=tempy31;
-
-	//updating the obscuring counts
 
 	if (fi1[i5]+fi2[i5]+fi3[i5]==3) {
 
@@ -3847,19 +3885,15 @@ if ((pow_alpha>=0)&&(sk2==0)){
 
 	}
 
-//acceptance count
+	//acceptance count
 
 	 res2a+=1;
-
 
 	 //updating profile
 
 	 for (i9=minf1;i9<maxf1;++i9) {
 
-
-
 		 F1[i9]=F1[i9]+(1.0/L)*sgn1;
-
 
 
 	 }
@@ -3867,9 +3901,7 @@ if ((pow_alpha>=0)&&(sk2==0)){
 	 for (i8=minf2+N1;i8<maxf2+N1;++i8) {
 
 
-
 		 F1[i8]=F1[i8]+(1.0/L)*sgn2;
-
 
 
 	 }
@@ -3878,12 +3910,12 @@ if ((pow_alpha>=0)&&(sk2==0)){
 
 	 logvec2-=(prodfdiff1_log+prodfdiff2_log+prodfdiff1r_log+prodfdiff2r_log);
 
-//updating collision points
+	 //updating collision points
 
 	 xst1[i5]=xsty1;
 	 xst2[i5]=xsty2;
 
-//updating mean and sd of the proposals
+	 //updating mean and sd of the proposals
 
 	 diff21m=diff21my;
 	 diff21m1=diff21my1;
@@ -3908,7 +3940,6 @@ else{//same updates but when one has to sample uniform[0,1] variable
 
 	double alpha=exp(pow_alpha);
 	 double u=unifrnd(gen);
-
 
 
 	 if ((u<=alpha)&&(sk2==0)){
@@ -3956,10 +3987,7 @@ else{//same updates but when one has to sample uniform[0,1] variable
 
 			 for (i9=minf1;i9<maxf1;++i9) {
 
-
-
 				 F1[i9]=F1[i9]+(1.0/L)*sgn1;
-
 
 
 			 }
@@ -3967,9 +3995,7 @@ else{//same updates but when one has to sample uniform[0,1] variable
 			 for (i8=minf2+N1;i8<maxf2+N1;++i8) {
 
 
-
 				 F1[i8]=F1[i8]+(1.0/L)*sgn2;
-
 
 
 			 }
@@ -4018,16 +4044,13 @@ if (logvec2<0) {
 	exit(1);
 }
 
-
-
-
 //record every tenth value of the time parameters to a file
+
 
 if ((i1+1)%10==0){
 for (i24=0;i24<L;++i24) {
 
 	f6<<t123sum[i24]<<" "<<t21diff[i24]<<" "<<t23diff[i24]<<"\n";
-
 
 }
 }
@@ -4046,6 +4069,9 @@ int fi1y,fi2y,fi3y;
 
 //normalising factors depending on the identifiability constraint in the current region
 
+
+
+
 double normq1=q1*q2*q3+(1-q1)*q2*q3+q1*q2*(1-q3)+(1-q1)*q2*(1-q3);
 
 double normq2=q1*q2*q3+(1-q1)*q2*q3+q1*q2*(1-q3)+q1*(1-q2)*q3+(1-q1)*q2*(1-q3);
@@ -4056,9 +4082,9 @@ double normq4=q1*q2*q3+(1-q2)*q1*q3+(1-q1)*q2*(1-q3)+(1-q1)*q2*q3;
 
 double normq5=q1*q2*q3+(1-q2)*q1*q3+(1-q1)*q2*(1-q3)+q1*q2*(1-q3);
 
-double uf=unifrnd(gen);
-
 //sampling the proposal
+
+double uf=unifrnd(gen);
 
 if ((fabs(t31diff[i6])>N1+N2)){//|t3-t1|>N1+N2
 
@@ -4096,7 +4122,7 @@ if ((fabs(t31diff[i6])>N1+N2)){//|t3-t1|>N1+N2
 		}
 	}
 }
-else{ //|t3-t1|<=N1+N2
+else{//|t3-t1|<=N1+N2
 
 
 	if (t21diff[i6]>N1){
@@ -4282,12 +4308,13 @@ else{ //|t3-t1|<=N1+N2
 
 //proposal count of occurrence of the regions, all 3 origins are licensed, only right (3)/ left (1) is not licensed
 
+
 int obscMy,obsc3My,obsc1My;
 
 //proposal count if the region
 
-int obscpry[5],obscpr3y[2],obscpr1y[2];
 
+int obscpry[5],obscprch[5],obscpr3y[2],obscpr1y[2];
 
 
 if (fi1[i6]*fi2[i6]*fi3[i6]==1){//all 3 origins are currently licensed
@@ -4297,8 +4324,8 @@ if (fi1[i6]*fi2[i6]*fi3[i6]==1){//all 3 origins are currently licensed
 
 		int obscc=obsc_cur(t123sum[i6],t21diff[i6],t23diff[i6],1,1,1,N1,N2);//obscuring status of the current profile
 
-
 		//computing proposal count of the 'not all 3 origins are licensed' region
+
 
 		for (int fif=0;fif<5;++fif) obscpry[fif]=obscpr[fif];
 
@@ -4327,7 +4354,7 @@ else{//currently not all 3 origins are licensed
 	if (fi1y*fi2y*fi3y==1) {//all 3 origins of the proposal are licensed
 
 
-		int obscc=obsc_cur(t123sum[i6],t21diff[i6],t23diff[i6],1,1,1,N1,N2);//obscuring status of the proposal given the proposal
+		int obscc=obsc_cur(t123sum[i6],t21diff[i6],t23diff[i6],1,1,1,N1,N2); //obscuring status of the proposal given the proposal
 
 		//computing proposal count of the 'all 3 origins are licensed' region
 
@@ -4336,6 +4363,7 @@ else{//currently not all 3 origins are licensed
 		obscpry[obscc]=obscpr[obscc]+1;
 
 		//check it does not go below zero
+
 
 		if (obscpry[obscc]<0){
 
@@ -4348,6 +4376,7 @@ else{//currently not all 3 origins are licensed
 		//proposal count of 'all 3 origins are licensed'
 
 		obscMy=obscM+1;
+
 
 	}
 }
@@ -4382,7 +4411,6 @@ else{//currently not all 3 origins are licensed
 
 			if ((fi1[i6]!=1)||(fi3[i6]!=0)){//current region is different from above
 
-
 				int obscc=obsc_cur(t123sum[i6],t21diff[i6],t23diff[i6],1,1,0,N1,N2); //obscuring status of the current profile given the proposal
 
 
@@ -4409,7 +4437,7 @@ else{//currently not all 3 origins are licensed
 
 			if ((fi1y!=0)||(fi3y!=1)){//proposed region is different from above
 
-				int obscc=obsc_cur(t123sum[i6],t21diff[i6],t23diff[i6],0,1,1,N1,N2);//obscuring status of the current profile
+				int obscc=obsc_cur(t123sum[i6],t21diff[i6],t23diff[i6],0,1,1,N1,N2);
 
 				obscpr1y[0]=obscpr1[0];
 
@@ -4434,7 +4462,7 @@ else{//currently not all 3 origins are licensed
 			if ((fi1[i6]!=0)||(fi3[i6]!=1)){//current region is different from above
 
 
-				int obscc=obsc_cur(t123sum[i6],t21diff[i6],t23diff[i6],0,1,1,N1,N2);//obscuring status of the current profile given the proposal
+				int obscc=obsc_cur(t123sum[i6],t21diff[i6],t23diff[i6],0,1,1,N1,N2);
 
 
 
@@ -4444,10 +4472,10 @@ else{//currently not all 3 origins are licensed
 
 				obscpr1y[obscc]=obscpr1[obscc]+1;
 
-				//proposal count of 'only left origin is not licensed'
+				//proposal count of 'only left origin is are licensed'
+
 
 				obsc1My=obsc1M+1;
-
 
 
 
@@ -4456,18 +4484,14 @@ else{//currently not all 3 origins are licensed
 
 		}
 
+		//collision points of the poposal
 
-
-
-
-
-//collision points of the poposal
 
 		int xsty1,xsty2;
 
 
-xstar(t123sum[i6],t21diff[i6],t23diff[i6],N1,N2,xsty1,xsty2,fi1y,fi2y,fi3y);
 
+xstar(t123sum[i6],t21diff[i6],t23diff[i6],N1,N2,xsty1,xsty2,fi1y,fi2y,fi3y);
 
 //check hat the collision points are feasible
 
@@ -4479,7 +4503,6 @@ if (((xsty1<0)||(xsty2<0))||((xsty1>N1)||(xsty2>N2))){
 	exit(1);
 
 }
-
 
 //MH computation step
 
@@ -4536,9 +4559,7 @@ int count1=0;
 for (i23=0;i23<L;++i23) {
 
 
-
 	if ((xst1[i23]>minf1)&&(xst1[i23]<maxf1)) {
-
 
 		count1+=1;
 
@@ -4550,6 +4571,7 @@ for (i23=0;i23<L;++i23) {
 }
 
 //identifying parts of the profile affected by these collision points
+
 
 Fmin1=F1[minf1];
 
@@ -4569,24 +4591,52 @@ qsort((void*)xsta1,count1+2,sizeof(int),compare_ints);
 
 //computing the part depending on the collision points only
 
+//taking into account unsequencable region
+
 
 for (i2=0;i2<count1+1;++i2){
 
-	double incr1=log(((1-b)*Fmin1+0.5*b+(1-b)*((double) i2/L))*((1-b)*Fmin1+0.5*b+(1-b)*((double) i2/L))+(1-b)*(1.0/L)*((1-b)*Fmin1+0.5*b+(1-b)*((double) i2/L))*sgn1)*(-xsta1[i2+1]+xsta1[i2])*log(1+(1-b)*((double) sgn1)/(L*((1-b)*Fmin1+0.5*b)+(1-b)*i2));
+	if (xsta1[i2]<minNA){
 
-	double incr1r=log(((1-b)*(1-Fmin1)+0.5*b-(1-b)*((double) i2/L))*((1-b)*(1-Fmin1)+0.5*b-(1-b)*((double) i2/L))-(1-b)*(1.0/L)*((1-b)*(1-Fmin1)+0.5*b-(1-b)*((double) i2/L))*sgn1)*(-xsta1[i2+1]+xsta1[i2])*log(1-(1-b)*((double) sgn1)/(L*((1-b)*(1-Fmin1)+0.5*b)-(1-b)*i2));
+		int NA=min(xsta1[i2+1],minNA-1);
 
+double incr1=log(((1-b)*Fmin1+0.5*b+(1-b)*((double) i2/L))*((1-b)*Fmin1+0.5*b+(1-b)*((double) i2/L))+(1-b)*(1.0/L)*((1-b)*Fmin1+0.5*b+(1-b)*((double) i2/L))*sgn1)*(-NA+xsta1[i2])*log(1+(1-b)*((double) sgn1)/(L*((1-b)*Fmin1+0.5*b)+(1-b)*i2));
 
-	prodfdiff1_log+=incr1;
-
-	prodfdiff1r_log+=incr1r;
-
-	prodfdiff1+=(incr1-(1.0/tau)*(-xsta1[i2+1]+xsta1[i2])*log(1+(1-b)*((double) sgn1)/(L*((1-b)*Fmin1+0.5*b)+(1-b)*i2)));
-
-	prodfdiff1r+=(incr1r-(1.0/tau)*(-xsta1[i2+1]+xsta1[i2])*log(1-(1-b)*((double) sgn1)/(L*((1-b)*(1-Fmin1)+0.5*b)-(1-b)*i2)));
+double incr1r=log(((1-b)*(1-Fmin1)+0.5*b-(1-b)*((double) i2/L))*((1-b)*(1-Fmin1)+0.5*b-(1-b)*((double) i2/L))-(1-b)*(1.0/L)*((1-b)*(1-Fmin1)+0.5*b-(1-b)*((double) i2/L))*sgn1)*(-NA+xsta1[i2])*log(1-(1-b)*((double) sgn1)/(L*((1-b)*(1-Fmin1)+0.5*b)-(1-b)*i2));
 
 
-//check that log expression is above zero
+prodfdiff1_log+=incr1;
+
+prodfdiff1r_log+=incr1r;
+
+prodfdiff1+=(incr1-(1.0/tau)*(-NA+xsta1[i2])*log(1+(1-b)*((double) sgn1)/(L*((1-b)*Fmin1+0.5*b)+(1-b)*i2)));
+
+prodfdiff1r+=(incr1r-(1.0/tau)*(-NA+xsta1[i2])*log(1-(1-b)*((double) sgn1)/(L*((1-b)*(1-Fmin1)+0.5*b)-(1-b)*i2)));
+	}
+
+	if (xsta1[i2+1]>maxNA){
+
+		int NA=max(xsta1[i2],maxNA+1);
+
+double incr1=log(((1-b)*Fmin1+0.5*b+(1-b)*((double) i2/L))*((1-b)*Fmin1+0.5*b+(1-b)*((double) i2/L))+(1-b)*(1.0/L)*((1-b)*Fmin1+0.5*b+(1-b)*((double) i2/L))*sgn1)*(-xsta1[i2+1]+NA)*log(1+(1-b)*((double) sgn1)/(L*((1-b)*Fmin1+0.5*b)+(1-b)*i2));
+
+double incr1r=log(((1-b)*(1-Fmin1)+0.5*b-(1-b)*((double) i2/L))*((1-b)*(1-Fmin1)+0.5*b-(1-b)*((double) i2/L))-(1-b)*(1.0/L)*((1-b)*(1-Fmin1)+0.5*b-(1-b)*((double) i2/L))*sgn1)*(-xsta1[i2+1]+NA)*log(1-(1-b)*((double) sgn1)/(L*((1-b)*(1-Fmin1)+0.5*b)-(1-b)*i2));
+
+
+prodfdiff1_log+=incr1;
+
+prodfdiff1r_log+=incr1r;
+
+prodfdiff1+=(incr1-(1.0/tau)*(-xsta1[i2+1]+NA)*log(1+(1-b)*((double) sgn1)/(L*((1-b)*Fmin1+0.5*b)+(1-b)*i2)));
+
+prodfdiff1r+=(incr1r-(1.0/tau)*(-xsta1[i2+1]+NA)*log(1-(1-b)*((double) sgn1)/(L*((1-b)*(1-Fmin1)+0.5*b)-(1-b)*i2)));
+	}
+
+
+
+	//check that log expression is above zero
+
+
 
 
 	if (1.0+(1-b)*((double) sgn1)/(L*((1-b)*Fmin1+0.5*b)+(1-b)*i2)<0) {
@@ -4605,6 +4655,7 @@ for (i2=0;i2<count1+1;++i2){
 
 //computing the part depending on the collision points and data xj[]
 
+
 double at, atr;
 
 for (i3=0;i3<count1+1;++i3){
@@ -4614,15 +4665,14 @@ atr=0;
 
 	for (i24=xsta1[i3];i24<xsta1[i3+1];++i24) {
 
+
 		at+=(2*logxj[i24]);
 		atr+=(2*logxjr[i24]);
 
 	}
-
 	double incr_at1=at*log(1.0+(1-b)*((double) sgn1)/(L*((1-b)*Fmin1+0.5*b)+(1-b)*i3));
 
 	double incr_at1r=atr*log(1.0-(1-b)*((double) sgn1)/(L*((1-b)*(1-Fmin1)+0.5*b)-(1-b)*i3));
-
 
 
 	prodfdiff1+=incr_at1;
@@ -4636,6 +4686,7 @@ atr=0;
 
 	//check that log expression is above zero
 
+
 	if ((1.0+(1-b)*((double) sgn1)/(L*((1-b)*Fmin1+0.5*b)+(1-b)*i3))<=0) {
 
 		cout<<"log 2\n";
@@ -4646,7 +4697,6 @@ atr=0;
 }
 
 //the same computations for the right collision point
-
 
 
 int xsta2[4992];
@@ -4673,29 +4723,52 @@ for (i23=0;i23<L;++i23) {
 xsta2[count2+1]=maxf2;
 
 
-
-
 qsort((void*)xsta2,count2+2,sizeof(int),compare_ints);
-
-
 
 
 for (i2=0;i2<count2+1;++i2){
 
 
 
-	double incr2=log(((1-b)*Fmin2+0.5*b+(1-b)*(i2/(double) L))*((1-b)*Fmin2+0.5*b+(1-b)*(i2/(double) L))+(1-b)*(1.0/L)*((1-b)*Fmin2+0.5*b+(1-b)*(i2/(double) L))*sgn2)*log(1+(1-b)*((double) sgn2)/(L*((1-b)*Fmin2+0.5*b)+(1-b)*i2))*(-xsta2[i2+1]+xsta2[i2]);
+	if (xsta2[i2]<minNA-N1){
 
-	double incr2r=log(((1-b)*(1-Fmin2)+0.5*b-(1-b)*(i2/(double) L))*((1-b)*(1-Fmin2)+0.5*b-(1-b)*(i2/(double) L))-(1-b)*(1.0/L)*((1-b)*(1-Fmin2)+0.5*b-(1-b)*(i2/(double) L))*sgn2)*log(1-(1-b)*((double) sgn2)/(L*((1-b)*(1-Fmin2)+0.5*b)-(1-b)*i2))*(-xsta2[i2+1]+xsta2[i2]);
+		int NA=min(xsta2[i2+1],minNA-N1-1);
 
 
-	prodfdiff2_log+=incr2;
+double incr2=log(((1-b)*Fmin2+0.5*b+(1-b)*(i2/(double) L))*((1-b)*Fmin2+0.5*b+(1-b)*(i2/(double) L))+(1-b)*(1.0/L)*((1-b)*Fmin2+0.5*b+(1-b)*(i2/(double) L))*sgn2)*log(1+(1-b)*((double) sgn2)/(L*((1-b)*Fmin2+0.5*b)+(1-b)*i2))*(-NA+xsta2[i2]);
 
-	prodfdiff2r_log+=incr2r;
+double incr2r=log(((1-b)*(1-Fmin2)+0.5*b-(1-b)*(i2/(double) L))*((1-b)*(1-Fmin2)+0.5*b-(1-b)*(i2/(double) L))-(1-b)*(1.0/L)*((1-b)*(1-Fmin2)+0.5*b-(1-b)*(i2/(double) L))*sgn2)*log(1-(1-b)*((double) sgn2)/(L*((1-b)*(1-Fmin2)+0.5*b)-(1-b)*i2))*(-NA+xsta2[i2]);
 
-	prodfdiff2+=(incr2-(1.0/tau)*log(1+(1-b)*((double) sgn2)/(L*((1-b)*Fmin2+0.5*b)+(1-b)*i2))*(-xsta2[i2+1]+xsta2[i2]));
 
-	prodfdiff2r+=(incr2r-(1.0/tau)*log(1-(1-b)*((double) sgn2)/(L*((1-b)*(1-Fmin2)+0.5*b)-(1-b)*i2))*(-xsta2[i2+1]+xsta2[i2]));
+prodfdiff2_log+=incr2;
+
+prodfdiff2r_log+=incr2r;
+
+prodfdiff2+=(incr2-(1.0/tau)*log(1+(1-b)*((double) sgn2)/(L*((1-b)*Fmin2+0.5*b)+(1-b)*i2))*(-NA+xsta2[i2]));
+
+prodfdiff2r+=(incr2r-(1.0/tau)*log(1-(1-b)*((double) sgn2)/(L*((1-b)*(1-Fmin2)+0.5*b)-(1-b)*i2))*(-NA+xsta2[i2]));
+
+	}
+
+	if (xsta2[i2+1]>maxNA-N1){
+
+		int NA=max(xsta2[i2],maxNA-N1+1);
+
+
+double incr2=log(((1-b)*Fmin2+0.5*b+(1-b)*(i2/(double) L))*((1-b)*Fmin2+0.5*b+(1-b)*(i2/(double) L))+(1-b)*(1.0/L)*((1-b)*Fmin2+0.5*b+(1-b)*(i2/(double) L))*sgn2)*log(1+(1-b)*((double) sgn2)/(L*((1-b)*Fmin2+0.5*b)+(1-b)*i2))*(-xsta2[i2+1]+NA);
+
+double incr2r=log(((1-b)*(1-Fmin2)+0.5*b-(1-b)*(i2/(double) L))*((1-b)*(1-Fmin2)+0.5*b-(1-b)*(i2/(double) L))-(1-b)*(1.0/L)*((1-b)*(1-Fmin2)+0.5*b-(1-b)*(i2/(double) L))*sgn2)*log(1-(1-b)*((double) sgn2)/(L*((1-b)*(1-Fmin2)+0.5*b)-(1-b)*i2))*(-xsta2[i2+1]+NA);
+
+
+prodfdiff2_log+=incr2;
+
+prodfdiff2r_log+=incr2r;
+
+prodfdiff2+=(incr2-(1.0/tau)*log(1+(1-b)*((double) sgn2)/(L*((1-b)*Fmin2+0.5*b)+(1-b)*i2))*(-xsta2[i2+1]+NA));
+
+prodfdiff2r+=(incr2r-(1.0/tau)*log(1-(1-b)*((double) sgn2)/(L*((1-b)*(1-Fmin2)+0.5*b)-(1-b)*i2))*(-xsta2[i2+1]+NA));
+
+	}
 
 
 	if ((1.0+(1-b)*((double) sgn2)/(L*((1-b)*Fmin2+0.5*b)+(1-b)*i2))<=0) {
@@ -4724,11 +4797,9 @@ for (i3=0;i3<count2+1;++i3){
 
 
 
-
 	double incr_at2=at*log(1+(1-b)*((double) sgn2)/(L*((1-b)*Fmin2+0.5*b)+(1-b)*i3));
 
 	double incr_at2r=atr*log(1-(1-b)*((double) sgn2)/(L*((1-b)*(1-Fmin2)+0.5*b)-(1-b)*i3));
-
 
 
 
@@ -4753,30 +4824,27 @@ for (i3=0;i3<count2+1;++i3){
 
 
 
-
-
 int sk=0;
 
 //criteria for eliminating flat profiles
+
 
 if ((((xsty1==0)&&(xsty2==0))||((xsty1==N1)&&(xsty2==N2)))) sk=1;
 
 if (sk==0){
 
-//acceptance probability
+	//acceptance probability
 
 double	pow_alpha=(prodfdiff1+prodfdiff2+prodfdiff1r+prodfdiff2r)*(tau/2.0);
 
 
-
-
 //acceptance-rejection
-
 
 if (pow_alpha>0){
 
 
-//updating the counts of tree regions: all origins are licensed, left/right origin is not licensed
+	//updating the counts of tree regions: all origins are licensed, left/right origin is not licensed
+
 
 	if ((((fi1[i6]+fi2[i6]+fi3[i6]==3)&&(fi1y+fi2y+fi3y<3))||((fi1[i6]+fi2[i6]+fi3[i6]<3)&&(fi1y+fi2y+fi3y==3)))){
 
@@ -4814,12 +4882,12 @@ if (pow_alpha>0){
 
 	//updating the number of times each origin is active
 
+
 	sumfi3=sumfi3-fi3[i6]+fi3y;
 
 	sumfi1=sumfi1-fi1[i6]+fi1y;
 
 	sumfi2=sumfi2-fi2[i6]+fi2y;
-
 
 	//updating mean values and sd of the proposals for time differences
 
@@ -4843,6 +4911,7 @@ if (pow_alpha>0){
 
 	diff31m=diff31m*dp31+temp4[i6]*(fi1y*fi3y-fi1[i6]*fi3[i6]);
 
+
 	//updating the count of time differences being licensed
 
 	dp21=dp21-fi2[i6]*fi1[i6]+fi2y*fi1y;
@@ -4850,6 +4919,9 @@ if (pow_alpha>0){
 	dp23=dp23-fi2[i6]*fi3[i6]+fi2y*fi3y;
 
 	dp31=dp31-fi3[i6]*fi1[i6]+fi3y*fi1y;
+
+
+
 
 
 
@@ -4868,7 +4940,6 @@ if (pow_alpha>0){
 	diff31m1=diff31m1/(double) dp31;
 
 
-
 	diff21s=sqrt((diff21s-dp21*diff21m1*diff21m1)/(double) (dp21-1));
 
 	diff23s=sqrt((diff23s-dp23*diff23m1*diff23m1)/(double) (dp23-1));
@@ -4876,7 +4947,7 @@ if (pow_alpha>0){
 	diff31s=sqrt((diff31s-dp31*diff31m1*diff31m1)/(double) (dp31-1));
 
 
-//updating licensing indicators
+	//updating licensing indicators
 
 	fi1[i6]=fi1y;
 
@@ -4884,14 +4955,13 @@ if (pow_alpha>0){
 
 	fi3[i6]=fi3y;
 
-//updating profile
+	//updating profile
+
 
 	 for (i9=minf1;i9<maxf1;++i9) {
 
 
-
 		 F1[i9]=F1[i9]+(1.0/L)*sgn1;
-
 
 
 	 }
@@ -4899,19 +4969,17 @@ if (pow_alpha>0){
 	 for (i8=minf2+N1;i8<maxf2+N1;++i8) {
 
 
-
 		 F1[i8]=F1[i8]+(1.0/L)*sgn2;
-
 
 
 	 }
 
-//updating the squared term
+	 //updating the squared term
 
 	 logvec2-=(prodfdiff1_log+prodfdiff2_log+prodfdiff1r_log+prodfdiff2r_log);
 
+	 //updating the collision points
 
-//updating the collision points
 
 	xst1[i6]=xsty1;
 
@@ -4925,13 +4993,12 @@ else{
 
 	//the same updates in case one has to sampled from uniform[0,1] to accept/reject
 
+
 	 double u=unifrnd(gen);
 	 double alpha=exp(pow_alpha);
 
 
 	 if (u<=alpha){
-
-
 
 
 			if ((((fi1[i6]+fi2[i6]+fi3[i6]==3)&&(fi1y+fi2y+fi3y<3))||((fi1[i6]+fi2[i6]+fi3[i6]<3)&&(fi1y+fi2y+fi3y==3)))){
@@ -4974,6 +5041,7 @@ else{
 			sumfi2=sumfi2-fi2[i6]+fi2y;
 
 
+
 			diff21s=diff21s*diff21s*(dp21-1)+t21diff[i6]*t21diff[i6]*(fi2y*fi1y-fi2[i6]*fi1[i6])+dp21*diff21m1*diff21m1;
 
 			diff23s=diff23s*diff23s*(dp23-1)+t23diff[i6]*t23diff[i6]*(fi2y*fi3y-fi3[i6]*fi2[i6])+dp23*diff23m1*diff23m1;
@@ -5003,9 +5071,6 @@ else{
 
 
 
-
-
-
 			diff21m=diff21m/(double) dp21;
 
 			diff23m=diff23m/(double) dp23;
@@ -5017,7 +5082,6 @@ else{
 			diff23m1=diff23m1/(double) dp23;
 
 			diff31m1=diff31m1/(double) dp31;
-
 
 
 			diff21s=sqrt((diff21s-dp21*diff21m1*diff21m1)/(double) (dp21-1));
@@ -5054,7 +5118,6 @@ else{
 			 logvec2-=(prodfdiff1_log+prodfdiff2_log+prodfdiff1r_log+prodfdiff2r_log);
 
 
-
 			xst1[i6]=xsty1;
 
 			xst2[i6]=xsty2;
@@ -5066,6 +5129,7 @@ else{
 }
 
 //check that the squared term is above zero
+
 
 if (logvec2<0) {
 
@@ -5081,11 +5145,10 @@ if (logvec2<0) {
 
 
 
-
-
 }
 
 //obscuring count for the case 'all three origins are active'
+
 
 cout<<obscpr[0]<<" "<<obscpr[1]<<" "<<obscpr[2]<<" "<<obscpr[3]<<" "<<obscpr[4]<<" obscpr f\n";
 
@@ -5112,221 +5175,49 @@ f8.close();
 
 //how much time it takes to run it
 
+
 time=clock()-time;
 
 cout<<"clicks "<<time<<" seconds "<<(float) time/CLOCKS_PER_SEC<<"\n";
 }
 
 
-namespace po = boost::program_options;
-
-using Floats  = std::vector<std::pair<std::string, float>>;
-using Ints    = std::vector<std::pair<std::string, int>>;
-using Strings = std::vector<std::pair<std::string, std::string>>;
-
-namespace std {
-    template <typename V> static inline std::istream& operator>>(std::istream& is, std::pair<std::string, V>& into) {
-        char ch;
-        while (is >> ch && ch!='=') into.first += ch;
-        return is >> into.second;
-    }
-}
-
-
-
-int main(int argc, char** argv)
+int main()
 
 {
-
-
-//	namespace po = boost::program_options;
-
-  po::variables_map vm;
-  po::options_description desc("Allowed Options");
-
-  // declare arguments
-  desc.add_options()
-  	("help,h", "Help screen")
-    ("chr,c", po::value<int>()->required(), "Enter the chromosome number")
-    ("rat,r", po::value<int>()->default_value(0), "Rat or not, rat==2 means human data")
-    ("wt,w", po::value<int>()->default_value(0), "If Rat, WT or not")
-    ("left,l", po::value<int>()->required(), "Number of left origin (in case of human data 1 or 2)");
-
-  // parse arguments and save them in the variable map (vm)
-  po::store(po::parse_command_line(argc, argv, desc), vm);
-      if (vm.count("help")){
-      std::cout << desc << '\n';
-  } else{
-
-  //std::cout << "Hello " << vm["chr"].as<int>() << std::endl;
-
-  int chr=vm["chr"].as<int>();
-  int rat=vm["rat"].as<int>();
-  int l=vm["left"].as<int>();
-  int w=vm["wt"].as<int>();
-
-//int rat=1;
-//int l=1013;
-
- // std::cout<<chr<<" lalalala"<<endl;
-  //bool rat=vm["rat"].as<std::bool>()
-  //int left=vm["left"].as<std::int>()
-
-
 	int i,j;
-	double xj[15000],xjr[15000];//data from the forward xj[] and reverse xjr[] strand of a corresponding size
+	double xj[3406], xjr[3406]; //data from the forward xj[] and reverse xjr[] strand of a corresponding size
 
 	//distances between origins
 
-int N1,N2;
 
-if (rat==0){
-if (chr==8){
-	if (l==813){
-	 N1=1032,N2=1249; //ARS813, 815, 816
-} else{
-	 N1=1249,N2=649; //ARS815, 816, 818
-}
-} else if (chr==7){
-	if (l==718){
+//	int N1=510,N2=1957; //ARS1014,1015,1018
+//	int N1=1957,N2=1446; //ARS1015, 1018, 1019
 
-	 N1=1285,N2=461; //ARS718, 719, 720
-} else{
-	 N1=660,N2=1285; //ARS717, 718, 719
-}
-} else if (chr==2){
-      
-      //int 
-      N1=222,N2=475;//ARS207,207.5,207.8
+	//	chromosome 10 data for rat1 example
 
-} else if (chr==10){
-      //	chromosome 10 distances
-	if (l==1001){
-	//int 
-	N1=461, N2=886; // ARS1001, ARS1004, ARS1005
-} else if (l==1004){
+//	int N1=503,N2=1960; //ARS1014,1015,1018
+	int N1=1960,N2=1446; //ARS1015, 1018, 1019
 
-	//int 
-	N1=886, N2=632; // ARS1004, ARS1005, ARS1006
-
-} else if (l==1005){
-
-	//int 
-	N1=632, N2=273; // ARS1005, ARS1006, ARS1007
-
-} else if (l==1006){
-
-	//int 
-	N1=273, N2=973; // ARS1006, ARS1007, ARS1007.5
-
-} else if (l==1007){
-	//int 
-	N1=973, N2=855; // ARS1007, ARS1007.5, ARS1008
-
-} else if (l==10075){
-	
-	//int 
-	N1=855, N2=483; // ARS1007.5, ARS1008, ARS1009
-
-} else if (l==1008){
-
-	//int 
-	N1=483, N2=1404; // ARS1008, ARS1009, ARS1010
-
-} else if (l==1009){
-
-	//int 
-	N1=1404, N2=760; // ARS1009, ARS1010, ARS1011
-
-} else if (l==1010){
-	
-	//int 
-	N1=767,N2=763; //ARS1010, 1011, 1013
-
-} else if (l==1011){
-
-	//int 
-	N1=763,N2=835; //ARS1011, 1013, 1014
-
-} else if (l==1013){
-	
-	//int 
-	N1=835,N2=510; //ARS1013, 1014, 1015
-
-} else {
-	//int 
-	N1=1446,N2=1420;//ARS1018, 1019, 1021
-}
-}
-} else if (rat==1){
-//	chromosome 10 data for rat1 example
-	if (l==1018){
-
-	//int 
-	N1=1450,N2=1407;//ARS1018, 1019, 1021
-
-} else if (l==1011){
-
-	//int 
-	N1=778,N2=822; //ARS1011, 1013, 1014
-
-} else{
-	//int 
-	N1=822,N2=505; //ARS1013, 1014, 1015
-}
-} else {
-
-	if (l==1){
-//	chromosome 2 human HeLa 98.25-99.3 Mb
-	//int 
-	N1=6459, N2=8500; // left triple of origins
-} else{
-	//int 
-	N1=8500, N2=6201; // right triple of origins
-}
-}
-
-	int M=4992;
+	int M=4992; //parameter M, number of profile realisations
 
 	//	int it=1000000; //amount of iteration in case of using simulations
+
+//ends of the unsequencable region
+
+//	int minNA=1098,maxNA=1336; //ARS1014,1015,1018
+//int minNA=1098-510,maxNA=1336-510; //ARS1015,1018,1019
+
+//	int minNA=1108,maxNA=1336; //ARS1014,1015,1018 rat1 data
+	int minNA=1108-503,maxNA=1336-503; //ARS1015,1018,1019 rat1 data
 
 	ifstream fi;//file for data from the forward strand
 	ifstream fir;//file for data from the reverse strand
 
-	ostringstream convert;
 
-	convert<<chr;
+	fi.open("chr10_wt_567_f.txt");
+	fir.open("chr10_wt_567_r.txt");
 
-	//		cout<<convert<<"\n";
-
-	string chrn=convert.str();
-
-	convert.str("");
-	convert.clear();
-	convert<<l;
-
-	string le=convert.str();
-
-	if (rat!=1){
-	fi.open("chr"+chrn+"_"+le+"_f.txt");
-	fir.open("chr"+chrn+"_"+le+"_r.txt");
-} else {
-	if (w==0){
-
-		fi.open("chr"+chrn+"_rat1_"+le+"_f.txt");
-	fir.open("chr"+chrn+"_rat1_"+le+"_r.txt");
-} else {
-		fi.open("chr"+chrn+"_wt_"+le+"_f.txt");
-	fir.open("chr"+chrn+"_wt_"+le+"_r.txt");
-
-}
-}
-
-//cout<<"chr"+chrn+"_"+le+"_f.txt"<<endl;
-
-//exit(1);
-
-	cout<<xj[0]<<"\n";
 
 	for (i=0;i<N1+N2;++i){
 		xj[i]=0.0;
@@ -5334,12 +5225,11 @@ if (chr==8){
 
 	}
 
+	//	simr(it,N1,N2,xjr,0.7,1.0/sqrt(100)); //simulating reverse strand
 
-//	simr(it,N1,N2,xjr,0.7,1.0/sqrt(100)); //simulating reverse strand
+	//	sim(-3000.0/3.0,6000.0/3.0,-3000.0/3.0,2000,2000,2000,it,N1,N2,xj,0.05,1.0/sqrt(100),1,1,1); //simulating forward strand
 
-//	sim(-3000.0/3.0,6000.0/3.0,-3000.0/3.0,2000,2000,2000,it,N1,N2,xj,0.05,1.0/sqrt(100),1,1,1); //simulating forward strand
-
-//writing data into arrays
+	//writing data into arrays
 
 	for (j=0;j<N1+N2;++j) {
 
@@ -5352,13 +5242,15 @@ if (chr==8){
 	}
 
 
-
-
 	fi.close();
 	fir.close();
 
-	MCMC(xj,xjr,M,N1,N2,1000000);//running the algorithm
+	MCMC(xj,xjr,M,N1,N2,10000000,minNA,maxNA); //running the algorithm
 
-}
+
+
+
+
+
 	return 0;
 }
